@@ -24,6 +24,7 @@ def test_llama_provider_loads_lazily_and_returns_chat_content(tmp_path):
 
     class FakeLlama:
         def create_chat_completion(self, **kwargs):
+            assert kwargs["messages"][0] == {"role": "system", "content": "be brief"}
             assert kwargs["messages"][-1] == {"role": "user", "content": "hello"}
             return {"choices": [{"message": {"content": "<think>private reasoning</think>\n\nhello back"}}]}
 

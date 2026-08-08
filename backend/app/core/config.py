@@ -5,6 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 DEFAULT_MODEL_PATH = Path(__file__).resolve().parents[3] / "ai" / "qwen3-0.6b-q4_k_m.gguf"
+DEFAULT_SYSTEM_PROMPT_PATH = Path(__file__).resolve().parents[3] / "ai" / "system-prompt.md"
 
 
 class Settings(BaseSettings):
@@ -13,6 +14,7 @@ class Settings(BaseSettings):
     backend_port: int = 8000
     cors_origins: str = "http://localhost:20380,http://127.0.0.1:20380"
     model_path: str = str(DEFAULT_MODEL_PATH)
+    system_prompt_path: str = str(DEFAULT_SYSTEM_PROMPT_PATH)
     model_context_size: int = 4096
     model_max_tokens: int = 512
 

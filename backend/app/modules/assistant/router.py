@@ -25,7 +25,7 @@ def build_assistant_router(assistant_service: AssistantService) -> APIRouter:
     @router.post("/inference", response_model=InferenceResult)
     async def inference(payload: InferenceRequest) -> InferenceResult:
         try:
-            return await assistant_service.generate_inference(payload.prompt, payload.system)
+            return await assistant_service.generate_inference(payload.prompt)
         except ModelNotConfiguredError as error:
             raise HTTPException(
                 status_code=503,

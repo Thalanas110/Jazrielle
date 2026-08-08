@@ -1,7 +1,12 @@
+from pathlib import Path
+
+import pytest
 from fastapi.testclient import TestClient
 
+from app.core.config import DEFAULT_SYSTEM_PROMPT_PATH, Settings
+from app.core.system_prompt import SystemPromptConfigurationError
 from app.main import app, create_app
-from app.modules.assistant.model import UnavailableModelProvider
+from app.modules.assistant.model import ModelStatus, UnavailableModelProvider
 
 
 client = TestClient(app)
@@ -66,3 +71,54 @@ def test_inference_reports_model_not_configured():
             "message": "A local language model is not configured.",
         }
     }
+
+
+class ConfiguredProvider:
+    def __init__(self):
+        self.system = None
+
+    def status(self):
+        return ModelStatus(configured=True, ready=True)
+
+    async def generate(self, prompt: str, system: str):
+        self.system = system
+        return "test-model", "ok"
+
+
+def test_create_app_reads_configured_system_prompt(tmp_path: Path):
+    prompt_path = tmp_path / "system-prompt.md"
+    prompt_path.write_text("custom prompt", encoding="utf-8")
+
+    application = create_app(
+        settings=Settings(system_prompt_path=str(prompt_path)),
+        model_provider=ConfiguredProvider(),
+    )
+
+    assert application.state.system_prompt == "custom prompt"
+
+
+def test_inference_ignores_request_system_prompt(tmp_path: Path):
+    provider = ConfiguredProvider()
+    prompt_path = tmp_path / "system-prompt.md"
+    prompt_path.write_text("file prompt", encoding="utf-8")
+    client = TestClient(create_app(
+        settings=Settings(system_prompt_path=str(prompt_path)),
+        model_provider=provider,
+    ))
+
+    response = client.post(
+        "/api/jarvis/inference",
+        json={"prompt": "hello", "system": "caller override"},
+    )
+
+    assert response.status_code == 200
+    assert provider.system == "file prompt"
+
+
+def test_create_app_fails_when_system_prompt_is_missing(tmp_path: Path):
+    with pytest.raises(SystemPromptConfigurationError, match="does not exist"):
+        create_app(settings=Settings(system_prompt_path=str(tmp_path / "missing.md")))
+
+
+def test_default_app_loads_repository_system_prompt():
+    assert app.state.system_prompt == DEFAULT_SYSTEM_PROMPT_PATH.read_text(encoding="utf-8")

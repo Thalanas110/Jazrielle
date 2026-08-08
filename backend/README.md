@@ -15,6 +15,10 @@ uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
 The API is available at `http://127.0.0.1:8000`. The local development frontend reaches it through Vite's `/api` proxy.
 
+## System prompt
+
+At startup, the backend loads the authoritative system prompt from `ai/system-prompt.md`. The file must exist and contain valid UTF-8 text. Its contents are used for every inference request; the request `system` field is retained only for HTTP compatibility and does not override the file. Restart the backend after editing the prompt.
+
 ## Test
 
 ```powershell
