@@ -1,0 +1,18 @@
+{
+  "applications": {
+    "calendar": {
+      "label": "Calendar",
+      "launchTarget": "Calendar"
+    },
+    "downloads": {
+      "label": "Downloads",
+      "launchTarget": "Downloads"
+    }
+  },
+  "projects": {},
+  "settings": {
+    "reminderPath": "reminders.json",
+    "weatherLocation": "Manila, Philippines",
+    "repositoryPath": ".."
+  }
+}
