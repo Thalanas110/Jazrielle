@@ -7,6 +7,7 @@ from app.modules.assistant.intent import AssistantIntent
 from app.modules.assistant.schemas import Capability, CommandResult
 from app.modules.assistant.action_config import AssistantActionConfig
 from app.modules.assistant.adapters.metrics import LocalMetricsAdapter, MetricsAdapter
+from app.modules.assistant.adapters.media import MediaAdapter, WindowsMediaAdapter
 from app.modules.assistant.adapters.network import (
     UpdateProvider,
     WeatherProvider,
@@ -79,6 +80,7 @@ def build_action_registry(config: Any = None, adapters: Any = None) -> ActionReg
     action_config: AssistantActionConfig = config or AssistantActionConfig()
     system: SystemAdapter = getattr(adapters, "system", None) or LocalSystemAdapter()
     metrics: MetricsAdapter = getattr(adapters, "metrics", None) or LocalMetricsAdapter()
+    media: MediaAdapter = getattr(adapters, "media", None) or WindowsMediaAdapter()
     processes: ProcessAdapter = getattr(adapters, "processes", None) or WindowsProcessAdapter()
     reminders: ReminderStore = getattr(adapters, "reminders", None) or JsonReminderStore(
         action_config.settings.reminder_path
@@ -179,6 +181,33 @@ def build_action_registry(config: Any = None, adapters: Any = None) -> ActionReg
         except (OSError, subprocess.TimeoutExpired):
             return CommandResult(message="Updates are temporarily unavailable.", handled=False)
         return CommandResult(message=message, handled=True)
+
+    def play_media(intent: AssistantIntent) -> CommandResult:
+        del intent
+        try:
+            media.play()
+        except RuntimeError:
+            return CommandResult(message="Media controls are unavailable.", handled=False)
+        return CommandResult(message="Playing media.", handled=True)
+
+    def pause_media(intent: AssistantIntent) -> CommandResult:
+        del intent
+        try:
+            media.pause()
+        except RuntimeError:
+            return CommandResult(message="Media controls are unavailable.", handled=False)
+        return CommandResult(message="Pausing playback.", handled=True)
+
+    def set_volume(intent: AssistantIntent) -> CommandResult:
+        raw_level = intent.arguments.get("level", intent.arguments.get("percent"))
+        if isinstance(raw_level, bool) or not isinstance(raw_level, (int, float)) or not 0 <= raw_level <= 100:
+            return CommandResult(message="Volume must be between 0 and 100.", handled=False)
+        level = int(raw_level)
+        try:
+            media.set_volume(level)
+        except RuntimeError:
+            return CommandResult(message="Volume controls are unavailable.", handled=False)
+        return CommandResult(message=f"Volume set to {level}%.", handled=True)
 
     return ActionRegistry(
         {
@@ -286,6 +315,27 @@ def build_action_registry(config: Any = None, adapters: Any = None) -> ActionReg
                 description="Check for available local application updates.",
                 examples=["give me an update"],
                 handler=get_updates,
+            ),
+            "play_media": ActionDefinition(
+                id="play_media",
+                label="Play media",
+                description="Start media playback.",
+                examples=["play the music"],
+                handler=play_media,
+            ),
+            "pause_media": ActionDefinition(
+                id="pause_media",
+                label="Pause media",
+                description="Pause media playback.",
+                examples=["pause the music"],
+                handler=pause_media,
+            ),
+            "set_volume": ActionDefinition(
+                id="set_volume",
+                label="Set volume",
+                description="Set system volume from 0 to 100.",
+                examples=["set volume to 35"],
+                handler=set_volume,
             ),
         }
     )

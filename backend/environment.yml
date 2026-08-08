@@ -13,3 +13,4 @@ dependencies:
   - pip:
       - --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
       - llama-cpp-python
+      - pycaw
