@@ -4,7 +4,9 @@ from typing import Any
 
 from app.modules.assistant.intent import AssistantIntent
 from app.modules.assistant.schemas import Capability, CommandResult
+from app.modules.assistant.action_config import AssistantActionConfig
 from app.modules.assistant.adapters.metrics import LocalMetricsAdapter, MetricsAdapter
+from app.modules.assistant.adapters.processes import ProcessAdapter, WindowsProcessAdapter
 from app.modules.assistant.adapters.system import LocalSystemAdapter, SystemAdapter
 
 
@@ -66,9 +68,10 @@ class ActionRegistry:
 
 
 def build_action_registry(config: Any = None, adapters: Any = None) -> ActionRegistry:
-    del config
+    action_config: AssistantActionConfig = config or AssistantActionConfig()
     system: SystemAdapter = getattr(adapters, "system", None) or LocalSystemAdapter()
     metrics: MetricsAdapter = getattr(adapters, "metrics", None) or LocalMetricsAdapter()
+    processes: ProcessAdapter = getattr(adapters, "processes", None) or WindowsProcessAdapter()
 
     def cpu_usage(intent: AssistantIntent) -> CommandResult:
         del intent
@@ -92,6 +95,37 @@ def build_action_registry(config: Any = None, adapters: Any = None) -> ActionReg
         rows = metrics.top_processes(raw_limit)
         formatted = ", ".join(f"{row['name']} ({float(row['memory_mb']):.1f} MB)" for row in rows)
         return CommandResult(message=f"Top processes: {formatted or 'none found'}.", handled=True)
+
+    def open_application(intent: AssistantIntent) -> CommandResult:
+        target = _configured_target(action_config.applications, intent.arguments.get("application"))
+        if target is None:
+            return CommandResult(message="That application is not configured.", handled=False)
+        return CommandResult(message=f"Opening {target.label}.", handled=True, app=target.label)
+
+    def close_application(intent: AssistantIntent) -> CommandResult:
+        target = _configured_target(action_config.applications, intent.arguments.get("application"))
+        if target is None:
+            return CommandResult(message="That application is not configured.", handled=False)
+        if not target.process_name:
+            return CommandResult(message=f"{target.label} has no close target configured.", handled=False)
+        processes.stop(target.process_name)
+        return CommandResult(message=f"Closing {target.label}.", handled=True)
+
+    def start_project(intent: AssistantIntent) -> CommandResult:
+        target = _configured_target(action_config.projects, intent.arguments.get("project"))
+        if target is None:
+            return CommandResult(message="That project is not configured.", handled=False)
+        processes.start(target.start_command.copy(), target.working_directory)
+        return CommandResult(message=f"Starting {intent.arguments['project']}.", handled=True)
+
+    def stop_project(intent: AssistantIntent) -> CommandResult:
+        target = _configured_target(action_config.projects, intent.arguments.get("project"))
+        if target is None:
+            return CommandResult(message="That project is not configured.", handled=False)
+        if not target.process_name:
+            return CommandResult(message="That project has no stop target configured.", handled=False)
+        processes.stop(target.process_name)
+        return CommandResult(message=f"Stopping {intent.arguments['project']}.", handled=True)
 
     return ActionRegistry(
         {
@@ -144,5 +178,39 @@ def build_action_registry(config: Any = None, adapters: Any = None) -> ActionReg
                 examples=["what is using the most RAM"],
                 handler=top_processes,
             ),
+            "open_application": ActionDefinition(
+                id="open_application",
+                label="Open application",
+                description="Open a configured application.",
+                examples=["open calendar"],
+                handler=open_application,
+            ),
+            "close_application": ActionDefinition(
+                id="close_application",
+                label="Close application",
+                description="Close a configured application.",
+                examples=["close spotify"],
+                handler=close_application,
+            ),
+            "start_project": ActionDefinition(
+                id="start_project",
+                label="Start project",
+                description="Start a configured project.",
+                examples=["start the demo project"],
+                handler=start_project,
+            ),
+            "stop_project": ActionDefinition(
+                id="stop_project",
+                label="Stop project",
+                description="Stop a configured project.",
+                examples=["stop the demo project"],
+                handler=stop_project,
+            ),
         }
     )
+
+
+def _configured_target(targets: dict[str, Any], value: Any) -> Any | None:
+    if not isinstance(value, str) or not value.strip():
+        return None
+    return targets.get(value.strip().lower())
