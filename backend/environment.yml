@@ -1,0 +1,10 @@
+name: kaelith-backend
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - fastapi
+  - uvicorn
+  - pydantic-settings
+  - pytest
+  - httpx
