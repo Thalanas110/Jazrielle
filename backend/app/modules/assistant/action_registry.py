@@ -1,11 +1,18 @@
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+import subprocess
 from typing import Any
 
 from app.modules.assistant.intent import AssistantIntent
 from app.modules.assistant.schemas import Capability, CommandResult
 from app.modules.assistant.action_config import AssistantActionConfig
 from app.modules.assistant.adapters.metrics import LocalMetricsAdapter, MetricsAdapter
+from app.modules.assistant.adapters.network import (
+    UpdateProvider,
+    WeatherProvider,
+    WttrWeatherProvider,
+    WingetUpdateProvider,
+)
 from app.modules.assistant.adapters.processes import ProcessAdapter, WindowsProcessAdapter
 from app.modules.assistant.adapters.reminders import JsonReminderStore, ReminderStore
 from app.modules.assistant.adapters.system import LocalSystemAdapter, SystemAdapter
@@ -76,6 +83,8 @@ def build_action_registry(config: Any = None, adapters: Any = None) -> ActionReg
     reminders: ReminderStore = getattr(adapters, "reminders", None) or JsonReminderStore(
         action_config.settings.reminder_path
     )
+    weather: WeatherProvider = getattr(adapters, "weather", None) or WttrWeatherProvider()
+    updates: UpdateProvider = getattr(adapters, "updates", None) or WingetUpdateProvider()
 
     def cpu_usage(intent: AssistantIntent) -> CommandResult:
         del intent
@@ -149,6 +158,27 @@ def build_action_registry(config: Any = None, adapters: Any = None) -> ActionReg
             return CommandResult(message="No reminders are set.", handled=True)
         formatted = "; ".join(f"{reminder.due_at}: {reminder.message}" for reminder in values)
         return CommandResult(message=f"Reminders: {formatted}.", handled=True)
+
+    def get_weather(intent: AssistantIntent) -> CommandResult:
+        location = intent.arguments.get("location") or action_config.settings.weather_location
+        if not isinstance(location, str) or not location.strip():
+            return CommandResult(message="A weather location is required.", handled=False)
+        try:
+            report = weather.get_weather(location.strip())
+        except (OSError, KeyError, ValueError, TimeoutError):
+            return CommandResult(message="Weather is temporarily unavailable.", handled=False)
+        return CommandResult(
+            message=f"{report.location}: {report.temperature_c} C, {report.description}.",
+            handled=True,
+        )
+
+    def get_updates(intent: AssistantIntent) -> CommandResult:
+        del intent
+        try:
+            message = updates.get_updates()
+        except (OSError, subprocess.TimeoutExpired):
+            return CommandResult(message="Updates are temporarily unavailable.", handled=False)
+        return CommandResult(message=message, handled=True)
 
     return ActionRegistry(
         {
@@ -242,6 +272,20 @@ def build_action_registry(config: Any = None, adapters: Any = None) -> ActionReg
                 description="List local reminders.",
                 examples=["what reminders do I have"],
                 handler=list_reminders,
+            ),
+            "get_weather": ActionDefinition(
+                id="get_weather",
+                label="Weather check",
+                description="Retrieve weather for a configured or requested location.",
+                examples=["what is the weather"],
+                handler=get_weather,
+            ),
+            "get_updates": ActionDefinition(
+                id="get_updates",
+                label="Updates check",
+                description="Check for available local application updates.",
+                examples=["give me an update"],
+                handler=get_updates,
             ),
         }
     )
