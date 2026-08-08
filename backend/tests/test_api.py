@@ -1,8 +1,10 @@
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.core.config import Settings
+from app.core.system_prompt import SystemPromptConfigurationError
 from app.main import app, create_app
 from app.modules.assistant.model import ModelStatus, UnavailableModelProvider
 
@@ -111,3 +113,8 @@ def test_inference_ignores_request_system_prompt(tmp_path: Path):
 
     assert response.status_code == 200
     assert provider.system == "file prompt"
+
+
+def test_create_app_fails_when_system_prompt_is_missing(tmp_path: Path):
+    with pytest.raises(SystemPromptConfigurationError, match="does not exist"):
+        create_app(settings=Settings(system_prompt_path=str(tmp_path / "missing.md")))
