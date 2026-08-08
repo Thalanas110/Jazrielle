@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from app.modules.assistant.action_registry import ActionRegistry
 from app.modules.assistant.schemas import Capability, CommandResult
 
 
@@ -25,7 +26,9 @@ CAPABILITIES = [
 ]
 
 
-def get_capabilities() -> list[Capability]:
+def get_capabilities(registry: ActionRegistry | None = None) -> list[Capability]:
+    if registry is not None:
+        return registry.get_capabilities()
     return CAPABILITIES.copy()
 
 
