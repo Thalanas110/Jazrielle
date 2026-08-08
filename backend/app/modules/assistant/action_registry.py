@@ -4,6 +4,7 @@ from typing import Any
 
 from app.modules.assistant.intent import AssistantIntent
 from app.modules.assistant.schemas import Capability, CommandResult
+from app.modules.assistant.adapters.metrics import LocalMetricsAdapter, MetricsAdapter
 from app.modules.assistant.adapters.system import LocalSystemAdapter, SystemAdapter
 
 
@@ -67,6 +68,31 @@ class ActionRegistry:
 def build_action_registry(config: Any = None, adapters: Any = None) -> ActionRegistry:
     del config
     system: SystemAdapter = getattr(adapters, "system", None) or LocalSystemAdapter()
+    metrics: MetricsAdapter = getattr(adapters, "metrics", None) or LocalMetricsAdapter()
+
+    def cpu_usage(intent: AssistantIntent) -> CommandResult:
+        del intent
+        return CommandResult(message=f"CPU usage is {metrics.cpu_usage():.1f}%.", handled=True)
+
+    def memory_usage(intent: AssistantIntent) -> CommandResult:
+        del intent
+        usage = metrics.memory_usage()
+        return CommandResult(
+            message=(
+                f"Memory usage is {usage['percent']:.1f}% "
+                f"({usage['used_gb']:.1f}/{usage['total_gb']:.1f} GB)."
+            ),
+            handled=True,
+        )
+
+    def top_processes(intent: AssistantIntent) -> CommandResult:
+        raw_limit = intent.arguments.get("limit", 5)
+        if isinstance(raw_limit, bool) or not isinstance(raw_limit, int) or not 1 <= raw_limit <= 10:
+            return CommandResult(message="The process limit must be between 1 and 10.", handled=False)
+        rows = metrics.top_processes(raw_limit)
+        formatted = ", ".join(f"{row['name']} ({float(row['memory_mb']):.1f} MB)" for row in rows)
+        return CommandResult(message=f"Top processes: {formatted or 'none found'}.", handled=True)
+
     return ActionRegistry(
         {
             "conversation": ActionDefinition(
@@ -96,6 +122,27 @@ def build_action_registry(config: Any = None, adapters: Any = None) -> ActionReg
                 description="Report basic local system status.",
                 examples=["what is the system status"],
                 handler=lambda intent: CommandResult(message=system.get_system_status(), handled=True),
+            ),
+            "get_cpu_usage": ActionDefinition(
+                id="get_cpu_usage",
+                label="CPU usage",
+                description="Read current CPU usage.",
+                examples=["what is my CPU usage"],
+                handler=cpu_usage,
+            ),
+            "get_memory_usage": ActionDefinition(
+                id="get_memory_usage",
+                label="Memory usage",
+                description="Read current memory usage.",
+                examples=["what is my RAM usage"],
+                handler=memory_usage,
+            ),
+            "get_top_processes": ActionDefinition(
+                id="get_top_processes",
+                label="Top processes",
+                description="List processes using the most memory.",
+                examples=["what is using the most RAM"],
+                handler=top_processes,
             ),
         }
     )

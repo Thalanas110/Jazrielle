@@ -8,6 +8,7 @@ dependencies:
   - pydantic-settings
   - pytest
   - httpx
+  - psutil
   - pip
   - pip:
       - --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
