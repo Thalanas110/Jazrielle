@@ -30,7 +30,7 @@ def create_app(
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    assistant_service = AssistantService(resolved_provider)
+    assistant_service = AssistantService(resolved_provider, system_prompt)
     application.include_router(build_health_router(resolved_provider))
     application.include_router(build_assistant_router(assistant_service))
     application.state.model_provider = resolved_provider

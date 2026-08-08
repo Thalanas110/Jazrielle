@@ -4,8 +4,9 @@ from app.modules.assistant.schemas import CapabilitiesResponse, CommandResult, I
 
 
 class AssistantService:
-    def __init__(self, model_provider: ModelProvider):
+    def __init__(self, model_provider: ModelProvider, system_prompt: str):
         self._model_provider = model_provider
+        self._system_prompt = system_prompt
 
     def get_capabilities(self) -> CapabilitiesResponse:
         return CapabilitiesResponse(
@@ -18,6 +19,6 @@ class AssistantService:
     def execute_command(self, command: str) -> CommandResult:
         return execute_command(command)
 
-    async def generate_inference(self, prompt: str, system: str) -> InferenceResult:
-        model, response = await self._model_provider.generate(prompt, system)
+    async def generate_inference(self, prompt: str) -> InferenceResult:
+        model, response = await self._model_provider.generate(prompt, self._system_prompt)
         return InferenceResult(model=model, response=response)

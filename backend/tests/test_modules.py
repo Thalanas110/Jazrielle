@@ -6,15 +6,19 @@ from app.modules.assistant.service import AssistantService
 
 
 class ConfiguredProvider:
+    def __init__(self):
+        self.system = None
+
     def status(self) -> ModelStatus:
         return ModelStatus(configured=True, ready=True)
 
     async def generate(self, prompt: str, system: str) -> tuple[str | None, str]:
+        self.system = system
         return "test-model", f"response to: {prompt}"
 
 
 def test_assistant_service_exposes_capabilities_and_commands():
-    service = AssistantService(ConfiguredProvider())
+    service = AssistantService(ConfiguredProvider(), "canonical prompt")
 
     capabilities = service.get_capabilities()
     command = service.execute_command("what time is it")
@@ -26,16 +30,19 @@ def test_assistant_service_exposes_capabilities_and_commands():
 
 @pytest.mark.anyio
 async def test_assistant_service_returns_provider_inference():
-    result = await AssistantService(ConfiguredProvider()).generate_inference("hello", "be brief")
+    provider = ConfiguredProvider()
+
+    result = await AssistantService(provider, "canonical prompt").generate_inference("hello")
 
     assert result.model == "test-model"
     assert result.response == "response to: hello"
+    assert provider.system == "canonical prompt"
 
 
 @pytest.mark.anyio
 async def test_unavailable_provider_is_exposed_without_http_concerns():
     with pytest.raises(Exception) as raised:
-        await AssistantService(UnavailableModelProvider()).generate_inference("hello", "")
+        await AssistantService(UnavailableModelProvider(), "canonical prompt").generate_inference("hello")
 
     assert raised.value.__class__.__name__ == "ModelNotConfiguredError"
 
