@@ -1,10 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.health import build_health_router
-from app.api.jarvis import build_jarvis_router
 from app.core.config import Settings, get_settings
-from app.services.model import ModelProvider, UnavailableModelProvider
+from app.modules.assistant.model import ModelProvider, UnavailableModelProvider
+from app.modules.assistant.router import build_assistant_router
+from app.modules.assistant.service import AssistantService
+from app.modules.health.router import build_health_router
 
 
 def create_app(
@@ -21,8 +22,9 @@ def create_app(
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    assistant_service = AssistantService(resolved_provider)
     application.include_router(build_health_router(resolved_provider))
-    application.include_router(build_jarvis_router(resolved_provider))
+    application.include_router(build_assistant_router(assistant_service))
     application.state.model_provider = resolved_provider
     return application
 

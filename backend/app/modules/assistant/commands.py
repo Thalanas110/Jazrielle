@@ -1,20 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel
-
-
-class Capability(BaseModel):
-    id: str
-    label: str
-    description: str
-    examples: list[str]
-
-
-class CommandResult(BaseModel):
-    message: str
-    handled: bool
-    app: str | None = None
-    launchUrl: str | None = None
+from app.modules.assistant.schemas import Capability, CommandResult
 
 
 CAPABILITIES = [

@@ -1,16 +1,7 @@
 from fastapi import APIRouter
-from pydantic import BaseModel
 
-from app.services.model import ModelProvider
-
-
-class HealthResponse(BaseModel):
-    status: str
-
-
-class ReadyResponse(BaseModel):
-    status: str
-    model_configured: bool
+from app.modules.assistant.model import ModelProvider
+from app.modules.health.schemas import HealthResponse, ReadyResponse
 
 
 def build_health_router(model_provider: ModelProvider) -> APIRouter:
