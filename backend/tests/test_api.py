@@ -72,10 +72,14 @@ def test_inference_reports_model_not_configured():
 
 
 class ConfiguredProvider:
+    def __init__(self):
+        self.system = None
+
     def status(self):
         return ModelStatus(configured=True, ready=True)
 
     async def generate(self, prompt: str, system: str):
+        self.system = system
         return "test-model", "ok"
 
 
@@ -89,3 +93,21 @@ def test_create_app_reads_configured_system_prompt(tmp_path: Path):
     )
 
     assert application.state.system_prompt == "custom prompt"
+
+
+def test_inference_ignores_request_system_prompt(tmp_path: Path):
+    provider = ConfiguredProvider()
+    prompt_path = tmp_path / "system-prompt.md"
+    prompt_path.write_text("file prompt", encoding="utf-8")
+    client = TestClient(create_app(
+        settings=Settings(system_prompt_path=str(prompt_path)),
+        model_provider=provider,
+    ))
+
+    response = client.post(
+        "/api/jarvis/inference",
+        json={"prompt": "hello", "system": "caller override"},
+    )
+
+    assert response.status_code == 200
+    assert provider.system == "file prompt"
