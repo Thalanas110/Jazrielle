@@ -7,6 +7,7 @@ from app.modules.assistant.schemas import Capability, CommandResult
 from app.modules.assistant.action_config import AssistantActionConfig
 from app.modules.assistant.adapters.metrics import LocalMetricsAdapter, MetricsAdapter
 from app.modules.assistant.adapters.processes import ProcessAdapter, WindowsProcessAdapter
+from app.modules.assistant.adapters.reminders import JsonReminderStore, ReminderStore
 from app.modules.assistant.adapters.system import LocalSystemAdapter, SystemAdapter
 
 
@@ -72,6 +73,9 @@ def build_action_registry(config: Any = None, adapters: Any = None) -> ActionReg
     system: SystemAdapter = getattr(adapters, "system", None) or LocalSystemAdapter()
     metrics: MetricsAdapter = getattr(adapters, "metrics", None) or LocalMetricsAdapter()
     processes: ProcessAdapter = getattr(adapters, "processes", None) or WindowsProcessAdapter()
+    reminders: ReminderStore = getattr(adapters, "reminders", None) or JsonReminderStore(
+        action_config.settings.reminder_path
+    )
 
     def cpu_usage(intent: AssistantIntent) -> CommandResult:
         del intent
@@ -126,6 +130,25 @@ def build_action_registry(config: Any = None, adapters: Any = None) -> ActionReg
             return CommandResult(message="That project has no stop target configured.", handled=False)
         processes.stop(target.process_name)
         return CommandResult(message=f"Stopping {intent.arguments['project']}.", handled=True)
+
+    def create_reminder(intent: AssistantIntent) -> CommandResult:
+        message = intent.arguments.get("message")
+        due_at = intent.arguments.get("due_at") or intent.arguments.get("time")
+        if not isinstance(message, str) or not message.strip() or not isinstance(due_at, str):
+            return CommandResult(message="A reminder message and time are required.", handled=False)
+        try:
+            reminder = reminders.create(message, due_at)
+        except ValueError:
+            return CommandResult(message="That reminder time is not valid.", handled=False)
+        return CommandResult(message=f"Reminder set for {reminder.due_at}: {reminder.message}.", handled=True)
+
+    def list_reminders(intent: AssistantIntent) -> CommandResult:
+        del intent
+        values = reminders.list()
+        if not values:
+            return CommandResult(message="No reminders are set.", handled=True)
+        formatted = "; ".join(f"{reminder.due_at}: {reminder.message}" for reminder in values)
+        return CommandResult(message=f"Reminders: {formatted}.", handled=True)
 
     return ActionRegistry(
         {
@@ -205,6 +228,20 @@ def build_action_registry(config: Any = None, adapters: Any = None) -> ActionReg
                 description="Stop a configured project.",
                 examples=["stop the demo project"],
                 handler=stop_project,
+            ),
+            "create_reminder": ActionDefinition(
+                id="create_reminder",
+                label="Create reminder",
+                description="Create a local reminder.",
+                examples=["remind me at 8 PM to submit my report"],
+                handler=create_reminder,
+            ),
+            "list_reminders": ActionDefinition(
+                id="list_reminders",
+                label="List reminders",
+                description="List local reminders.",
+                examples=["what reminders do I have"],
+                handler=list_reminders,
             ),
         }
     )
