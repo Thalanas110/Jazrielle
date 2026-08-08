@@ -2,6 +2,20 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? '/api';
 
+async function commandError(response: Response): Promise<Error> {
+  try {
+    const payload = (await response.json()) as {
+      detail?: { message?: string } | string;
+    };
+    const detail = payload.detail;
+    const message = typeof detail === 'string' ? detail : detail?.message;
+    if (message) return new Error(message);
+  } catch {
+    // Use the status fallback below when the response is not JSON.
+  }
+  return new Error(`Command request failed: ${response.status}`);
+}
+
 export interface Capability {
   id: string;
   label: string;
@@ -62,7 +76,7 @@ export function useExecuteJarvisCommand() {
         body: JSON.stringify(data),
       });
       if (!response.ok) {
-        throw new Error(`Command request failed: ${response.status}`);
+        throw await commandError(response);
       }
       return (await response.json()) as CommandResult;
     },

@@ -135,7 +135,7 @@ function Home() {
           </div>
         </section>
 
-        {executeCommand.isError && <div className="notice error-notice" data-testid="status-command-error"><span>Command unavailable.</span><button type="button" onClick={() => submitCommand(command)}>Retry</button></div>}
+        {executeCommand.isError && <div className="notice error-notice" data-testid="status-command-error"><span>{executeCommand.error instanceof Error ? executeCommand.error.message : 'Command unavailable.'}</span><button type="button" onClick={() => submitCommand(command)}>Retry</button></div>}
         {executeCommand.data && history[0]?.message && <div className={`notice result-notice ${executeCommand.data.handled ? '' : 'unhandled'}`} data-testid="status-command-result"><Terminal size={14} /><span>{executeCommand.data.message}</span>{executeCommand.data.app && <b>{executeCommand.data.app}</b>}</div>}
 
         <div className="lower-grid">
