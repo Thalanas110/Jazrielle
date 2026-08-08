@@ -1,7 +1,10 @@
+from pathlib import Path
+
 from fastapi.testclient import TestClient
 
+from app.core.config import Settings
 from app.main import app, create_app
-from app.modules.assistant.model import UnavailableModelProvider
+from app.modules.assistant.model import ModelStatus, UnavailableModelProvider
 
 
 client = TestClient(app)
@@ -66,3 +69,23 @@ def test_inference_reports_model_not_configured():
             "message": "A local language model is not configured.",
         }
     }
+
+
+class ConfiguredProvider:
+    def status(self):
+        return ModelStatus(configured=True, ready=True)
+
+    async def generate(self, prompt: str, system: str):
+        return "test-model", "ok"
+
+
+def test_create_app_reads_configured_system_prompt(tmp_path: Path):
+    prompt_path = tmp_path / "system-prompt.md"
+    prompt_path.write_text("custom prompt", encoding="utf-8")
+
+    application = create_app(
+        settings=Settings(system_prompt_path=str(prompt_path)),
+        model_provider=ConfiguredProvider(),
+    )
+
+    assert application.state.system_prompt == "custom prompt"
