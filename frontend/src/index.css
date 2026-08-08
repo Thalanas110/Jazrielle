@@ -325,7 +325,7 @@
 button, input { font: inherit; }
 button { cursor: pointer; }
 
-.kaelith-stage {
+.jazrielle-stage {
   min-height: 100dvh;
   display: flex;
   align-items: center;
@@ -339,7 +339,7 @@ button { cursor: pointer; }
   position: relative;
   overflow: hidden;
 }
-.kaelith-stage::before {
+.jazrielle-stage::before {
   content: '';
   position: fixed;
   inset: 0;
@@ -349,7 +349,7 @@ button { cursor: pointer; }
   background-size: 17px 17px;
   mask-image: linear-gradient(135deg, black, transparent 65%);
 }
-.kaelith-shell {
+.jazrielle-shell {
   width: min(100%, 740px);
   position: relative;
   overflow: hidden;
@@ -454,8 +454,8 @@ kbd { padding: 3px 6px; border: 1px solid hsl(var(--border)); border-radius: 4px
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes shimmer { to { background-position: -200% 0; } }
 @media (max-width: 620px) {
-  .kaelith-stage { padding: 10px; align-items: flex-start; }
-  .kaelith-shell { margin-top: 10px; border-radius: 17px; }
+  .jazrielle-stage { padding: 10px; align-items: flex-start; }
+  .jazrielle-shell { margin-top: 10px; border-radius: 17px; }
   .presence-section { grid-template-columns: 1fr; gap: 4px; padding: 21px 19px 8px; }
   .orb-field { min-height: 178px; }
   .orb-canvas { width: 155px; height: 155px; }

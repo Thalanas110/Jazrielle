@@ -52,7 +52,7 @@ def test_assistant_service_exposes_capabilities_and_commands():
     capabilities = service.get_capabilities()
     command = service.execute_command("what time is it")
 
-    assert capabilities.assistant == "KAELITH"
+    assert capabilities.assistant == "JAZRIELLE"
     assert capabilities.llmConfigured is True
     assert command.handled is True
 
@@ -84,7 +84,7 @@ def test_app_composes_health_and_assistant_modules():
 Run from `backend`:
 
 ```powershell
-& 'C:\Users\Adriaan M. Dimate\anaconda3\Scripts\conda.exe' run --no-capture-output -n kaelith-backend python -m pytest tests/test_modules.py -q
+& 'C:\Users\Adriaan M. Dimate\anaconda3\Scripts\conda.exe' run --no-capture-output -n jazrielle-backend python -m pytest tests/test_modules.py -q
 ```
 
 Expected: collection fails because `app.modules` does not exist yet.
@@ -136,7 +136,7 @@ class AssistantService:
 
     def get_capabilities(self) -> CapabilitiesResponse:
         return CapabilitiesResponse(
-            assistant="KAELITH",
+            assistant="JAZRIELLE",
             localMode=True,
             llmConfigured=self._model_provider.status().configured,
             capabilities=get_capabilities(),
@@ -174,7 +174,7 @@ No route should contain command matching, capability data, or model-provider cal
 Run:
 
 ```powershell
-& 'C:\Users\Adriaan M. Dimate\anaconda3\Scripts\conda.exe' run --no-capture-output -n kaelith-backend python -m pytest tests/test_modules.py -q
+& 'C:\Users\Adriaan M. Dimate\anaconda3\Scripts\conda.exe' run --no-capture-output -n jazrielle-backend python -m pytest tests/test_modules.py -q
 ```
 
 Expected: `4 passed`.
@@ -212,7 +212,7 @@ Construct one provider and one assistant service, register both module routers, 
 Run:
 
 ```powershell
-& 'C:\Users\Adriaan M. Dimate\anaconda3\Scripts\conda.exe' run --no-capture-output -n kaelith-backend python -m pytest -q
+& 'C:\Users\Adriaan M. Dimate\anaconda3\Scripts\conda.exe' run --no-capture-output -n jazrielle-backend python -m pytest -q
 ```
 
 Expected: existing API tests plus module tests pass with unchanged payload assertions.

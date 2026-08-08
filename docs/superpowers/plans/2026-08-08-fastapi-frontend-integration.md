@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build a runnable Conda-managed FastAPI backend that supports the existing Kaelith frontend API contract while isolating future local-LLM integration behind a provider interface.
+**Goal:** Build a runnable Conda-managed FastAPI backend that supports the existing Jazrielle frontend API contract while isolating future local-LLM integration behind a provider interface.
 
 **Architecture:** FastAPI owns typed health, readiness, capabilities, command, and inference routes. A safe command registry handles only known deterministic actions, while a `ModelProvider` protocol isolates model loading/generation from HTTP code. Vite proxies the frontend's `/api` requests to FastAPI in development; the existing React Query hooks remain unchanged.
 
@@ -155,7 +155,7 @@ Expected: collection fails because `app.main` does not exist yet. Do not add rou
 Create `backend/environment.yml`:
 
 ```yaml
-name: kaelith-backend
+name: jazrielle-backend
 channels:
   - conda-forge
 dependencies:
@@ -171,7 +171,7 @@ Create the four package marker files as empty files. From `backend`, the environ
 
 ```powershell
 conda env create -f environment.yml
-conda activate kaelith-backend
+conda activate jazrielle-backend
 ```
 
 - [ ] **Step 4: Implement configuration and the unavailable model provider**
@@ -185,7 +185,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    app_name: str = "Kaelith API"
+    app_name: str = "Jazrielle API"
     backend_host: str = "127.0.0.1"
     backend_port: int = 8000
     cors_origins: str = "http://localhost:20380,http://127.0.0.1:20380"
@@ -333,7 +333,7 @@ def test_capabilities_match_the_frontend_contract():
 
     assert response.status_code == 200
     body = response.json()
-    assert body["assistant"] == "KAELITH"
+    assert body["assistant"] == "JAZRIELLE"
     assert body["localMode"] is True
     assert body["llmConfigured"] is False
     assert {item["id"] for item in body["capabilities"]} == {"calendar", "downloads", "time"}
@@ -444,7 +444,7 @@ def build_jarvis_router(model_provider: ModelProvider) -> APIRouter:
     @router.get("/capabilities", response_model=CapabilitiesResponse)
     async def capabilities() -> CapabilitiesResponse:
         return CapabilitiesResponse(
-            assistant="KAELITH",
+            assistant="JAZRIELLE",
             localMode=True,
             llmConfigured=model_provider.status().configured,
             capabilities=get_capabilities(),
@@ -600,13 +600,13 @@ server: {
 Create `backend/README.md` with these commands:
 
 ````markdown
-# Kaelith backend
+# Jazrielle backend
 
 ## Setup
 
 ```powershell
 conda env create -f environment.yml
-conda activate kaelith-backend
+conda activate jazrielle-backend
 ```
 
 ## Run
@@ -631,16 +631,16 @@ The inference endpoint intentionally reports `MODEL_NOT_CONFIGURED` until a loca
 Replace the empty root `README.md` with:
 
 ````markdown
-# Kaelith
+# Jazrielle
 
-Kaelith is a local-first desktop assistant interface.
+Jazrielle is a local-first desktop assistant interface.
 
 ## Development
 
 Start the backend in one shell:
 
 ```powershell
-conda activate kaelith-backend
+conda activate jazrielle-backend
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
@@ -673,7 +673,7 @@ Expected: both commands exit with code 0.
 
 - [ ] **Step 1: Verify backend tests from the Conda environment**
 
-From `backend` with `kaelith-backend` active:
+From `backend` with `jazrielle-backend` active:
 
 ```powershell
 pytest -q

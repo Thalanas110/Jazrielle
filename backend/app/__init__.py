@@ -1,1 +1,1 @@
-"""Kaelith backend application package."""
+"""Jazrielle backend application package."""

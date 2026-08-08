@@ -19,7 +19,7 @@ def test_assistant_service_exposes_capabilities_and_commands():
     capabilities = service.get_capabilities()
     command = service.execute_command("what time is it")
 
-    assert capabilities.assistant == "KAELITH"
+    assert capabilities.assistant == "JAZRIELLE"
     assert capabilities.llmConfigured is True
     assert command.handled is True
 

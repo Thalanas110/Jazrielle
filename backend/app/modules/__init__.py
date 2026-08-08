@@ -1,1 +1,1 @@
-"""Feature modules for the Kaelith backend."""
+"""Feature modules for the Jazrielle backend."""

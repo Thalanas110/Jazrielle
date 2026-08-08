@@ -63,8 +63,8 @@ function Home() {
       {
         onSuccess: (result) => {
           setHistory((items) => [{ command: next, message: result.message, handled: result.handled }, ...items].slice(0, 5));
-          if (window.kaelithDesktop && (result.app || result.launchUrl)) {
-            void window.kaelithDesktop.openTarget({ app: result.app, url: result.launchUrl });
+          if (window.jazrielleDesktop && (result.app || result.launchUrl)) {
+            void window.jazrielleDesktop.openTarget({ app: result.app, url: result.launchUrl });
           } else if (result.launchUrl) {
             window.open(result.launchUrl, '_blank', 'noopener,noreferrer');
           }
@@ -77,7 +77,7 @@ function Home() {
   const submitInference = () => {
     const prompt = inference.trim();
     if (!prompt || runInference.isPending) return;
-    runInference.mutate({ data: { prompt, system: 'You are Kaelith, a concise local desktop assistant. Be practical and brief.' } });
+    runInference.mutate({ data: { prompt, system: 'You are Jazrielle, a concise local desktop assistant. Be practical and brief.' } });
     setInference('');
   };
 
@@ -88,14 +88,14 @@ function Home() {
   ];
 
   return (
-    <main className="kaelith-stage">
-      <div className="kaelith-shell" data-testid="kaelith-shell">
+    <main className="jazrielle-stage">
+      <div className="jazrielle-shell" data-testid="jazrielle-shell">
         <header className="shell-header">
           <div className="brand-lockup">
             <div className="brand-mark" aria-hidden="true"><Activity size={17} strokeWidth={2.4} /></div>
             <div>
               <p className="eyebrow">LOCAL COMPANION</p>
-              <h1 data-testid="text-assistant-name">{caps?.assistant ?? 'KAELITH'}</h1>
+              <h1 data-testid="text-assistant-name">{caps?.assistant ?? 'JAZRIELLE'}</h1>
             </div>
           </div>
           <div className="header-actions">

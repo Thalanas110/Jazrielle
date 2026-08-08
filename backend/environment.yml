@@ -1,4 +1,4 @@
-name: kaelith-backend
+name: jazrielle-backend
 channels:
   - conda-forge
 dependencies:
@@ -8,3 +8,7 @@ dependencies:
   - pydantic-settings
   - pytest
   - httpx
+  - pip
+  - pip:
+      - --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
+      - llama-cpp-python

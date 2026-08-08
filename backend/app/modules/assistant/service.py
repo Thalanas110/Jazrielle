@@ -9,7 +9,7 @@ class AssistantService:
 
     def get_capabilities(self) -> CapabilitiesResponse:
         return CapabilitiesResponse(
-            assistant="KAELITH",
+            assistant="JAZRIELLE",
             localMode=True,
             llmConfigured=self._model_provider.status().configured,
             capabilities=get_capabilities(),

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 
-from app.modules.assistant.model import ModelNotConfiguredError
+from app.modules.assistant.model import ModelNotConfiguredError, ModelRuntimeUnavailableError
 from app.modules.assistant.schemas import (
     CapabilitiesResponse,
     CommandRequest,
@@ -32,6 +32,14 @@ def build_assistant_router(assistant_service: AssistantService) -> APIRouter:
                 detail={
                     "code": "MODEL_NOT_CONFIGURED",
                     "message": "A local language model is not configured.",
+                },
+            ) from error
+        except ModelRuntimeUnavailableError as error:
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "code": "MODEL_RUNTIME_UNAVAILABLE",
+                    "message": "The local language model runtime is not available.",
                 },
             ) from error
 

@@ -1,9 +1,9 @@
 /// <reference types="vite/client" />
 
-interface KaelithDesktopBridge {
+interface JazrielleDesktopBridge {
   openTarget: (target: { app?: string | null; url?: string | null }) => Promise<void>;
 }
 
 interface Window {
-  kaelithDesktop?: KaelithDesktopBridge;
+  jazrielleDesktop?: JazrielleDesktopBridge;
 }

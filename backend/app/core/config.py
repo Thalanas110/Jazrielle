@@ -1,13 +1,20 @@
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+DEFAULT_MODEL_PATH = Path(__file__).resolve().parents[3] / "ai" / "qwen3-0.6b-q4_k_m.gguf"
+
+
 class Settings(BaseSettings):
-    app_name: str = "Kaelith API"
+    app_name: str = "Jazrielle API"
     backend_host: str = "127.0.0.1"
     backend_port: int = 8000
     cors_origins: str = "http://localhost:20380,http://127.0.0.1:20380"
+    model_path: str = str(DEFAULT_MODEL_PATH)
+    model_context_size: int = 4096
+    model_max_tokens: int = 512
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

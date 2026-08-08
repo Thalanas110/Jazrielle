@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 
-from app.main import app
+from app.main import app, create_app
+from app.modules.assistant.model import UnavailableModelProvider
 
 
 client = TestClient(app)
@@ -17,7 +18,7 @@ def test_ready_reports_api_up_but_model_not_configured():
     response = client.get("/ready")
 
     assert response.status_code == 200
-    assert response.json() == {"status": "ok", "model_configured": False}
+    assert response.json() == {"status": "ok", "model_configured": True}
 
 
 def test_capabilities_match_the_frontend_contract():
@@ -25,9 +26,9 @@ def test_capabilities_match_the_frontend_contract():
 
     assert response.status_code == 200
     body = response.json()
-    assert body["assistant"] == "KAELITH"
+    assert body["assistant"] == "JAZRIELLE"
     assert body["localMode"] is True
-    assert body["llmConfigured"] is False
+    assert body["llmConfigured"] is True
     assert {item["id"] for item in body["capabilities"]} == {"calendar", "downloads", "time"}
 
 
@@ -52,7 +53,8 @@ def test_unknown_command_is_reported_as_unhandled():
 
 
 def test_inference_reports_model_not_configured():
-    response = client.post(
+    unavailable_client = TestClient(create_app(model_provider=UnavailableModelProvider()))
+    response = unavailable_client.post(
         "/api/jarvis/inference",
         json={"prompt": "Say hello", "system": "Be brief."},
     )

@@ -1,10 +1,10 @@
-# Kaelith backend
+# Jazrielle backend
 
 ## Setup
 
 ```powershell
 conda env create -f environment.yml
-conda activate kaelith-backend
+conda activate jazrielle-backend
 ```
 
 ## Run

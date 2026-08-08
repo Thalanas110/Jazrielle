@@ -1,6 +1,6 @@
-# Kaelith
+# Jazrielle
 
-Kaelith is a local-first desktop assistant interface.
+Jazrielle is a local-first desktop assistant interface.
 
 ## Development
 
@@ -8,7 +8,7 @@ Start the backend in one shell:
 
 ```powershell
 cd backend
-conda activate kaelith-backend
+conda activate jazrielle-backend
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
