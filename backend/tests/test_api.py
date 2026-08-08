@@ -54,6 +54,42 @@ def test_capabilities_match_the_frontend_contract():
     }
 
 
+def test_capabilities_expose_the_complete_prompt_action_set():
+    expected = {
+        "open_application",
+        "close_application",
+        "get_system_status",
+        "get_cpu_usage",
+        "get_memory_usage",
+        "get_top_processes",
+        "get_time",
+        "get_date",
+        "get_weather",
+        "play_media",
+        "pause_media",
+        "set_volume",
+        "create_reminder",
+        "list_reminders",
+        "get_updates",
+        "start_project",
+        "stop_project",
+        "git_status",
+        "open_url",
+        "conversation",
+    }
+
+    body = client.get("/api/jarvis/capabilities").json()
+
+    assert {item["id"] for item in body["capabilities"]} == expected
+
+
+def test_system_prompt_declares_target_and_url_safety_rules():
+    prompt = Path(DEFAULT_SYSTEM_PROMPT_PATH).read_text(encoding="utf-8")
+
+    assert "Never invent a path, executable, process name, or project command." in prompt
+    assert "accept only an `http` or `https` URL" in prompt
+
+
 def test_known_command_is_interpreted_without_shell_execution():
     application = create_app(
         model_provider=ConfiguredJsonProvider(

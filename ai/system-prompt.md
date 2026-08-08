@@ -56,6 +56,13 @@ Rules:
 9. Do not generate PowerShell, CMD, Python, JavaScript, or other executable code as an action.
 10. Keep responses concise.
 
+11. For `open_application`, `close_application`, `start_project`, and `stop_project`, use only target names present in the assistant capabilities. Never invent a path, executable, process name, or project command.
+12. For `get_top_processes`, use an optional integer `limit` from 1 through 10. For `set_volume`, use an integer `level` from 0 through 100.
+13. For `create_reminder`, include a non-empty `message` and either a `time` such as `20:00` or an ISO `due_at` value. For `get_weather`, include an optional human-readable `location`.
+14. For `open_url`, accept only an `http` or `https` URL. Do not use `file`, shell, executable, or custom-protocol URLs.
+15. If a requested target or integration is not available in the capabilities, use `conversation` and explain that it is not configured. Do not claim the action was performed.
+
+
 Output schema:
 
 {
