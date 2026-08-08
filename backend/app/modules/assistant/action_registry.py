@@ -2,6 +2,7 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 import subprocess
 from typing import Any
+from urllib.parse import urlparse
 
 from app.modules.assistant.intent import AssistantIntent
 from app.modules.assistant.schemas import Capability, CommandResult
@@ -14,6 +15,7 @@ from app.modules.assistant.adapters.network import (
     WttrWeatherProvider,
     WingetUpdateProvider,
 )
+from app.modules.assistant.adapters.git import GitAdapter, LocalGitAdapter
 from app.modules.assistant.adapters.processes import ProcessAdapter, WindowsProcessAdapter
 from app.modules.assistant.adapters.reminders import JsonReminderStore, ReminderStore
 from app.modules.assistant.adapters.system import LocalSystemAdapter, SystemAdapter
@@ -87,6 +89,7 @@ def build_action_registry(config: Any = None, adapters: Any = None) -> ActionReg
     )
     weather: WeatherProvider = getattr(adapters, "weather", None) or WttrWeatherProvider()
     updates: UpdateProvider = getattr(adapters, "updates", None) or WingetUpdateProvider()
+    git: GitAdapter = getattr(adapters, "git", None) or LocalGitAdapter()
 
     def cpu_usage(intent: AssistantIntent) -> CommandResult:
         del intent
@@ -208,6 +211,20 @@ def build_action_registry(config: Any = None, adapters: Any = None) -> ActionReg
         except RuntimeError:
             return CommandResult(message="Volume controls are unavailable.", handled=False)
         return CommandResult(message=f"Volume set to {level}%.", handled=True)
+
+    def open_url(intent: AssistantIntent) -> CommandResult:
+        value = intent.arguments.get("url")
+        if not isinstance(value, str):
+            return CommandResult(message="A web URL is required.", handled=False)
+        parsed = urlparse(value.strip())
+        if parsed.scheme.lower() not in {"http", "https"} or not parsed.netloc or parsed.username or parsed.password:
+            return CommandResult(message="Only standard web URLs can be opened.", handled=False)
+        return CommandResult(message=f"Opening {parsed.netloc}.", handled=True, launchUrl=value.strip())
+
+    def git_status(intent: AssistantIntent) -> CommandResult:
+        del intent
+        message = git.status(action_config.settings.repository_path)
+        return CommandResult(message=message or "No Git status returned.", handled=True)
 
     return ActionRegistry(
         {
@@ -336,6 +353,20 @@ def build_action_registry(config: Any = None, adapters: Any = None) -> ActionReg
                 description="Set system volume from 0 to 100.",
                 examples=["set volume to 35"],
                 handler=set_volume,
+            ),
+            "open_url": ActionDefinition(
+                id="open_url",
+                label="Open URL",
+                description="Open a validated web URL.",
+                examples=["open https://example.com"],
+                handler=open_url,
+            ),
+            "git_status": ActionDefinition(
+                id="git_status",
+                label="Git status",
+                description="Read status for the configured repository.",
+                examples=["show git status"],
+                handler=git_status,
             ),
         }
     )
