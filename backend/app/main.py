@@ -16,6 +16,7 @@ from app.modules.health.router import build_health_router
 def create_app(
     settings: Settings | None = None,
     model_provider: ModelProvider | None = None,
+    adapters: object | None = None,
 ) -> FastAPI:
     resolved_settings = settings or get_settings()
     system_prompt = load_system_prompt(Path(resolved_settings.system_prompt_path))
@@ -36,13 +37,14 @@ def create_app(
     assistant_service = AssistantService(
         resolved_provider,
         system_prompt,
-        action_registry=build_action_registry(action_config),
+        action_registry=build_action_registry(action_config, adapters),
     )
     application.include_router(build_health_router(resolved_provider))
     application.include_router(build_assistant_router(assistant_service))
     application.state.model_provider = resolved_provider
     application.state.system_prompt = system_prompt
     application.state.action_config = action_config
+    application.state.adapters = adapters
     return application
 
 
