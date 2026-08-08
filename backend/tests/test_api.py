@@ -49,7 +49,9 @@ def test_capabilities_match_the_frontend_contract():
     assert body["assistant"] == "JAZRIELLE"
     assert body["localMode"] is True
     assert body["llmConfigured"] is True
-    assert {item["id"] for item in body["capabilities"]} == {"conversation"}
+    assert {"conversation", "get_time", "get_date", "get_system_status"} <= {
+        item["id"] for item in body["capabilities"]
+    }
 
 
 def test_known_command_is_interpreted_without_shell_execution():

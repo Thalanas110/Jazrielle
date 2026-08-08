@@ -4,6 +4,7 @@ from typing import Any
 
 from app.modules.assistant.intent import AssistantIntent
 from app.modules.assistant.schemas import Capability, CommandResult
+from app.modules.assistant.adapters.system import LocalSystemAdapter, SystemAdapter
 
 
 ActionHandler = Callable[[AssistantIntent], CommandResult | Mapping[str, Any]]
@@ -64,7 +65,8 @@ class ActionRegistry:
 
 
 def build_action_registry(config: Any = None, adapters: Any = None) -> ActionRegistry:
-    del config, adapters
+    del config
+    system: SystemAdapter = getattr(adapters, "system", None) or LocalSystemAdapter()
     return ActionRegistry(
         {
             "conversation": ActionDefinition(
@@ -73,6 +75,27 @@ def build_action_registry(config: Any = None, adapters: Any = None) -> ActionReg
                 description="Respond to a simple conversational request.",
                 examples=["how are you"],
                 handler=lambda intent: CommandResult(message=intent.message, handled=True),
-            )
+            ),
+            "get_time": ActionDefinition(
+                id="get_time",
+                label="Time check",
+                description="Read the current local time.",
+                examples=["what time is it"],
+                handler=lambda intent: CommandResult(message=f"It is {system.get_time()}.", handled=True),
+            ),
+            "get_date": ActionDefinition(
+                id="get_date",
+                label="Date check",
+                description="Read the current local date.",
+                examples=["what date is it"],
+                handler=lambda intent: CommandResult(message=f"Today is {system.get_date()}.", handled=True),
+            ),
+            "get_system_status": ActionDefinition(
+                id="get_system_status",
+                label="System status",
+                description="Report basic local system status.",
+                examples=["what is the system status"],
+                handler=lambda intent: CommandResult(message=system.get_system_status(), handled=True),
+            ),
         }
     )
