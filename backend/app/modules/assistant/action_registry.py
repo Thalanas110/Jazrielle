@@ -65,4 +65,14 @@ class ActionRegistry:
 
 def build_action_registry(config: Any = None, adapters: Any = None) -> ActionRegistry:
     del config, adapters
-    return ActionRegistry({})
+    return ActionRegistry(
+        {
+            "conversation": ActionDefinition(
+                id="conversation",
+                label="Conversation",
+                description="Respond to a simple conversational request.",
+                examples=["how are you"],
+                handler=lambda intent: CommandResult(message=intent.message, handled=True),
+            )
+        }
+    )

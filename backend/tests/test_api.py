@@ -12,6 +12,21 @@ from app.modules.assistant.model import ModelStatus, UnavailableModelProvider
 client = TestClient(app)
 
 
+class ConfiguredJsonProvider:
+    def __init__(self, response: str):
+        self.response = response
+        self.system = None
+        self.prompt = None
+
+    def status(self):
+        return ModelStatus(configured=True, ready=True)
+
+    async def generate(self, prompt: str, system: str):
+        self.prompt = prompt
+        self.system = system
+        return "test-model", self.response
+
+
 def test_health_reports_a_live_api():
     response = client.get("/health")
 
@@ -34,26 +49,54 @@ def test_capabilities_match_the_frontend_contract():
     assert body["assistant"] == "JAZRIELLE"
     assert body["localMode"] is True
     assert body["llmConfigured"] is True
-    assert {item["id"] for item in body["capabilities"]} == {"calendar", "downloads", "time"}
+    assert {item["id"] for item in body["capabilities"]} == {"conversation"}
 
 
-def test_known_command_is_handled_without_shell_execution():
-    response = client.post("/api/jarvis/execute", json={"command": "what time is it"})
+def test_known_command_is_interpreted_without_shell_execution():
+    application = create_app(
+        model_provider=ConfiguredJsonProvider(
+            '{"action":"conversation","arguments":{},"message":"The time action was selected."}'
+        )
+    )
+    response = TestClient(application).post(
+        "/api/jarvis/execute",
+        json={"command": "what time is it"},
+    )
 
     assert response.status_code == 200
     assert response.json()["handled"] is True
-    assert response.json()["message"].startswith("It is ")
+    assert response.json()["message"] == "The time action was selected."
 
 
-def test_unknown_command_is_reported_as_unhandled():
-    response = client.post("/api/jarvis/execute", json={"command": "run arbitrary shell"})
+def test_natural_language_command_is_interpreted_by_model():
+    application = create_app(
+        model_provider=ConfiguredJsonProvider(
+            '{"action":"conversation","arguments":{},"message":"I understand."}'
+        )
+    )
+
+    response = TestClient(application).post(
+        "/api/jarvis/execute",
+        json={"command": "please acknowledge this"},
+    )
 
     assert response.status_code == 200
+    assert response.json()["message"] == "I understand."
+
+
+def test_malformed_model_intent_is_reported_as_a_structured_error():
+    application = create_app(model_provider=ConfiguredJsonProvider("not-json"))
+    response = TestClient(application).post(
+        "/api/jarvis/execute",
+        json={"command": "run arbitrary shell"},
+    )
+
+    assert response.status_code == 422
     assert response.json() == {
-        "message": "I do not have a safe action for that command.",
-        "handled": False,
-        "app": None,
-        "launchUrl": None,
+        "detail": {
+            "code": "INVALID_MODEL_INTENT",
+            "message": "I couldn't understand that request.",
+        }
     }
 
 

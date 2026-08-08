@@ -1,5 +1,7 @@
 from fastapi import APIRouter, HTTPException
 
+from app.modules.assistant.action_registry import UnknownActionError
+from app.modules.assistant.intent import IntentParseError
 from app.modules.assistant.model import ModelNotConfiguredError, ModelRuntimeUnavailableError
 from app.modules.assistant.schemas import (
     CapabilitiesResponse,
@@ -20,7 +22,40 @@ def build_assistant_router(assistant_service: AssistantService) -> APIRouter:
 
     @router.post("/execute", response_model=CommandResult)
     async def execute(payload: CommandRequest) -> CommandResult:
-        return assistant_service.execute_command(payload.command)
+        try:
+            return await assistant_service.execute_command(payload.command)
+        except ModelNotConfiguredError as error:
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "code": "MODEL_NOT_CONFIGURED",
+                    "message": "A local language model is not configured.",
+                },
+            ) from error
+        except ModelRuntimeUnavailableError as error:
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "code": "MODEL_RUNTIME_UNAVAILABLE",
+                    "message": "The local language model runtime is not available.",
+                },
+            ) from error
+        except IntentParseError as error:
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "code": "INVALID_MODEL_INTENT",
+                    "message": "I couldn't understand that request.",
+                },
+            ) from error
+        except UnknownActionError as error:
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "code": "UNSUPPORTED_ACTION",
+                    "message": "That action is not available.",
+                },
+            ) from error
 
     @router.post("/inference", response_model=InferenceResult)
     async def inference(payload: InferenceRequest) -> InferenceResult:
