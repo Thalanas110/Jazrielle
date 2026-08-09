@@ -5,7 +5,8 @@ $backendDir = Join-Path $rootDir "backend"
 $modelPath = Join-Path $rootDir "ai\qwen3-0.6b-q4_k_m.gguf"
 $outputDir = Join-Path $rootDir "src-tauri\binaries"
 $targetTriple = (& rustc --print host-tuple).Trim()
-$outputPath = Join-Path $outputDir "jazrielle-backend-$targetTriple.exe"
+$sidecarName = "jazrielle-backend-$targetTriple"
+$outputPath = Join-Path $outputDir "$sidecarName.exe"
 
 if ($targetTriple -ne "x86_64-pc-windows-msvc") {
     throw "Jazrielle's Windows sidecar build requires x86_64-pc-windows-msvc; found '$targetTriple'."
@@ -18,8 +19,7 @@ if (-not (Test-Path -LiteralPath $modelPath)) {
 $condaCommand = Get-Command conda.exe -ErrorAction SilentlyContinue
 if (-not $condaCommand) {
     $condaCandidates = @(
-        (Join-Path $env:USERPROFILE "anaconda3\Scripts\conda.exe"),
-        (Join-Path $env:USERPROFILE "miniconda3\Scripts\conda.exe")
+        (Join-Path $env:USERPROFILE "anaconda3\Scripts\conda.exe")
     )
     $condaPath = $condaCandidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
 } else {
@@ -41,7 +41,7 @@ try {
         --clean `
         --onefile `
         --noconsole `
-        --name jazrielle-backend `
+        --name $sidecarName `
         --paths $backendDir `
         --distpath $outputDir `
         --workpath $workDir `
@@ -54,10 +54,8 @@ try {
     Pop-Location
 }
 
-$builtPath = Join-Path $outputDir "jazrielle-backend.exe"
-if (-not (Test-Path -LiteralPath $builtPath)) {
-    throw "PyInstaller completed but '$builtPath' was not created."
+if (-not (Test-Path -LiteralPath $outputPath)) {
+    throw "PyInstaller completed but '$outputPath' was not created."
 }
 
-Move-Item -LiteralPath $builtPath -Destination $outputPath -Force
 Write-Host "Built $outputPath"
