@@ -6,6 +6,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
 import { AssistantPanel } from '@/components/assistant-panel';
+import { AssistantContent } from '@/components/assistant-content';
 import { FloatingLauncher } from '@/components/floating-launcher';
 import {
   ArrowUpRight,
@@ -103,7 +104,7 @@ function Home() {
         </FloatingLauncher>
       ) : (
         <AssistantPanel onClose={closeLauncher}>
-          <div className="jazrielle-shell" data-testid="jazrielle-shell">
+          <AssistantContent>
 
         <section className="presence-section">
           <div className={`orb-field ${executeCommand.isPending || runInference.isPending ? 'is-thinking' : ''}`} data-testid="presence-orb">
@@ -162,7 +163,7 @@ function Home() {
           <span><LockKeyhole size={12} /> private by default</span>
         </footer>
         {showCapabilities && <div className="capability-drawer" data-testid="panel-capabilities">{capabilityQuery.isLoading ? <div className="skeleton-line" /> : capabilityQuery.isError ? <div className="drawer-error"><p>Capabilities are offline.</p><button type="button" onClick={() => capabilityQuery.refetch()} data-testid="button-retry-capabilities"><RefreshCw size={13} /> Retry</button></div> : caps?.capabilities.map((capability) => <div className="capability-row" key={capability.id}><span className="capability-index">{capability.id.slice(0, 2).toUpperCase()}</span><div><b>{capability.label}</b><p>{capability.description}</p></div><ExternalLink size={13} /></div>)}</div>}
-          </div>
+          </AssistantContent>
         </AssistantPanel>
       )}
     </main>
