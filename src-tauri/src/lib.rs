@@ -15,21 +15,37 @@ struct BackendProcess(Mutex<Option<CommandChild>>);
 fn write_runtime_log(app: &tauri::AppHandle, message: &str) {
     eprintln!("{message}");
 
-    let log_dir = app
-        .path()
-        .app_log_dir()
-        .or_else(|_| app.path().app_data_dir());
-    let Ok(log_dir) = log_dir else {
+    let Some(log_path) = runtime_log_path(app) else {
         return;
     };
 
-    if create_dir_all(&log_dir).is_err() {
-        return;
+    if let Some(log_dir) = log_path.parent() {
+        if create_dir_all(log_dir).is_err() {
+            return;
+        }
     }
 
-    let log_path = log_dir.join("jazrielle.log");
     if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(log_path) {
         let _ = writeln!(file, "{message}");
+    }
+}
+
+fn runtime_log_path(app: &tauri::AppHandle) -> Option<std::path::PathBuf> {
+    let log_dir = app
+        .path()
+        .app_log_dir()
+        .or_else(|_| app.path().app_data_dir())
+        .ok()?;
+    Some(log_dir.join("jazrielle.log"))
+}
+
+fn clear_backend_if_pid(app: &tauri::AppHandle, pid: u32) {
+    if let Some(state) = app.try_state::<BackendProcess>() {
+        if let Ok(mut child) = state.0.lock() {
+            if child.as_ref().is_some_and(|process| process.pid() == pid) {
+                child.take();
+            }
+        }
     }
 }
 
@@ -70,6 +86,10 @@ pub fn run() {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
+            if let Some(log_path) = runtime_log_path(&app.handle()) {
+                std::env::set_var("JAZRIELLE_LOG_PATH", log_path.display().to_string());
+            }
+
             let startup: Result<_, String> = (|| {
                 let source_assets =
                     std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../ai");
@@ -100,21 +120,34 @@ pub fn run() {
                     return Err(std::io::Error::other(error).into());
                 }
             };
+            let backend_pid = child.pid();
             app.manage(BackendProcess(Mutex::new(Some(child))));
 
             let log_app = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 while let Some(event) = events.recv().await {
+                    let terminated = matches!(&event, CommandEvent::Terminated(_));
                     match event {
                         CommandEvent::Error(error) => write_runtime_log(
                             &log_app,
                             &format!("Jazrielle backend process error: {error}"),
+                        ),
+                        CommandEvent::Stderr(line) => write_runtime_log(
+                            &log_app,
+                            &format!(
+                                "Jazrielle backend stderr: {}",
+                                String::from_utf8_lossy(&line)
+                            ),
                         ),
                         CommandEvent::Terminated(payload) => write_runtime_log(
                             &log_app,
                             &format!("Jazrielle backend terminated: {payload:?}"),
                         ),
                         event => eprintln!("Jazrielle backend: {event:?}"),
+                    }
+
+                    if terminated {
+                        clear_backend_if_pid(&log_app, backend_pid);
                     }
                 }
             });
