@@ -10,16 +10,20 @@ from tests.support import FakeFetchProvider, FakeSearchProvider
 
 
 class ConfiguredJsonProvider:
-    def __init__(self, response: str):
+    def __init__(self, response: str, summary_response: str | None = None):
         self.response = response
+        self.summary_response = summary_response
         self.system = None
+        self.calls = []
 
     def status(self):
         return ModelStatus(configured=True, ready=True)
 
     async def generate(self, prompt: str, system: str):
-        del prompt
+        self.calls.append((prompt, system))
         self.system = system
+        if self.summary_response is not None and "SOURCE MATERIAL START" in prompt:
+            return "test-model", self.summary_response
         return "test-model", self.response
 
 
@@ -59,7 +63,8 @@ def test_command_route_uses_prompt_intent_and_registered_handler():
 def test_google_search_command_returns_text_without_opening_a_browser():
     url = "https://pagasa.dost.gov.ph/"
     provider = ConfiguredJsonProvider(
-        '{"action":"search_google","arguments":{"query":"rainfall warning for Cebu"},"message":"Searching Google."}'
+        '{"action":"search_google","arguments":{"query":"rainfall warning for Cebu"},"message":"Searching Google."}',
+        summary_response="Cebu is under a yellow rainfall warning.",
     )
     search = FakeSearchProvider(
         [
@@ -85,7 +90,12 @@ def test_google_search_command_returns_text_without_opening_a_browser():
 
     assert response.status_code == 200
     assert response.json()["handled"] is True
-    assert "Current yellow rainfall warning for Cebu." in response.json()["message"]
+    assert response.json()["message"] == "Cebu is under a yellow rainfall warning."
+    assert "Web results" not in response.json()["message"]
+    assert len(provider.calls) == 2
+    assert "SOURCE MATERIAL START" in provider.calls[1][0]
+    assert "Current yellow rainfall warning for Cebu." in provider.calls[1][0]
+    assert "untrusted" in provider.calls[1][1].lower()
     assert response.json()["launchUrl"] is None
 
 
