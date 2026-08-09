@@ -9,3 +9,5 @@ __pycache__/
 *$py.class
 
 dist/**
+src-tauri/target/
+src-tauri/gen/
