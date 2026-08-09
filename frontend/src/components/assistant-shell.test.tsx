@@ -1,6 +1,16 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import App from '../App';
+
+const originalGetContext = HTMLCanvasElement.prototype.getContext;
+
+beforeAll(() => {
+  HTMLCanvasElement.prototype.getContext = (() => null) as typeof HTMLCanvasElement.prototype.getContext;
+});
+
+afterAll(() => {
+  HTMLCanvasElement.prototype.getContext = originalGetContext;
+});
 
 const capabilities = {
   assistant: 'JAZRIELLE',

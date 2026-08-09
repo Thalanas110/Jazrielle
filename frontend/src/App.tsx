@@ -35,12 +35,16 @@ import {
   Router as WouterRouter,
 } from 'wouter';
 import { initialLauncherState, launcherReducer } from '@/lib/launcher-state';
+import { isTauriRuntime } from '@/lib/tauri-window';
 import { useLauncherWindow } from '@/lib/use-launcher-window';
 
 const queryClient = new QueryClient();
 
 function Home() {
-  const [launcherState, dispatch] = useReducer(launcherReducer, initialLauncherState);
+  const [launcherState, dispatch] = useReducer(
+    launcherReducer,
+    isTauriRuntime() ? initialLauncherState : { mode: 'expanded' as const },
+  );
   const launcherRoot = useRef<HTMLDivElement>(null);
   const closeLauncher = useCallback(() => dispatch({ type: 'close' }), []);
   const openLauncher = useCallback(() => dispatch({ type: 'open' }), []);
