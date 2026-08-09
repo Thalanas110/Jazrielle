@@ -12,12 +12,16 @@ export type WorkArea = {
   height: number;
 };
 
+export const WINDOW_INSET = 16;
+export const LAUNCHER_SIZE = 80;
+
 export const WINDOW_SIZES: Record<WindowMode, WindowSize> = {
-  collapsed: { width: 80, height: 80 },
+  collapsed: {
+    width: LAUNCHER_SIZE + WINDOW_INSET * 2,
+    height: LAUNCHER_SIZE + WINDOW_INSET * 2,
+  },
   expanded: { width: 420, height: 640 },
 };
-
-export const WINDOW_INSET = 16;
 
 export function getWindowSize(mode: WindowMode): WindowSize {
   return WINDOW_SIZES[mode];
