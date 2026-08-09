@@ -150,17 +150,29 @@ Invoke-RestMethod `
   -Body '{"command":"what time is it"}'
 ```
 
-The command response contains a user-facing `message`, a `handled` flag, and optional `app` or `launchUrl` metadata. The frontend renders the message and passes launch metadata to a desktop bridge when one is available.
+The command response contains a user-facing `message`, a `handled` flag, and optional `app` or `launchUrl` metadata. Google-search requests use the registered `search_google` action, fetch result titles and snippets in the backend, and return them in `message` without opening a browser or setting `launchUrl`. The frontend passes launch metadata to a desktop bridge only for actions that actually need it.
+
+Online lookup example:
+
+```json
+{
+  "action": "search_google",
+  "arguments": {
+    "query": "color coded rainfall warning for Cebu province right now"
+  },
+  "message": "Searching Google."
+}
+```
 
 ## Browser and native-desktop boundary
 
-The development UI runs as a normal web page. It cannot call `CreateProcess`, launch `code.exe`, open Spotify directly, or perform other unrestricted desktop actions. The local backend can execute the fixed, allowlisted project command; application launch metadata still requires a native wrapper. When one is added, it should expose a narrow bridge such as:
+The development UI runs as a normal web page. It cannot call `CreateProcess`, launch `code.exe`, open Spotify directly, or perform other unrestricted desktop actions. The local backend can execute the fixed, allowlisted project command and perform server-side Google lookups; application launch metadata still requires a native wrapper. When one is added, it should expose a narrow bridge such as:
 
 ```ts
 window.jazrielleDesktop.openTarget({ app, url })
 ```
 
-The wrapper, not the model, must map application targets to native operations. Tauri is the planned option for that boundary. Until then, configured project commands can be handled by the local backend, while browser-only application launching remains unavailable.
+The wrapper, not the model, must map application targets to native operations. Tauri is the planned option for that boundary. Until then, configured project commands and Google searches can be handled by the local backend, while browser-only application launching remains unavailable.
 
 ## Testing and verification
 
@@ -184,7 +196,7 @@ npm run build
 
 ### The command endpoint returns `422`
 
-The backend returns `422` for an empty or structurally invalid model intent, or for an action that is not registered. Plain-text conversational model responses are normalized into safe conversation results. Check that the backend is running the current code and that the local model is responding with the action schema in `ai/system-prompt.md`.
+The backend returns `422` for an empty or structurally invalid model intent, or for an action that is not registered. Search requests must use the registered `search_google` action; they should not be emitted as `open_url` or an invented action. Plain-text conversational model responses are normalized into safe conversation results. Check that the backend is running the current code and that the local model is responding with the action schema in `ai/system-prompt.md`.
 
 ### An application says it is not configured
 

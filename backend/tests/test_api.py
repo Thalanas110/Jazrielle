@@ -75,6 +75,7 @@ def test_capabilities_expose_the_complete_prompt_action_set():
         "stop_project",
         "git_status",
         "open_url",
+        "search_google",
         "conversation",
     }
 
@@ -88,6 +89,8 @@ def test_system_prompt_declares_target_and_url_safety_rules():
 
     assert "Never invent a path, executable, process name, or project command." in prompt
     assert "accept only an `http` or `https` URL" in prompt
+    assert "search_google" in prompt
+    assert "do not use `open_url`" in prompt
     assert "Use `start_project` when the user asks to open VS Code in a configured project." in prompt
     assert "configured project-target context" in prompt
     assert "jazrielle" not in prompt

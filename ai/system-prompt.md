@@ -41,6 +41,7 @@ start_project
 stop_project
 git_status
 open_url
+search_google
 conversation
 
 Rules:
@@ -60,8 +61,9 @@ Rules:
 12. For `get_top_processes`, use an optional integer `limit` from 1 through 10. For `set_volume`, use an integer `level` from 0 through 100.
 13. For `create_reminder`, include a non-empty `message` and either a `time` such as `20:00` or an ISO `due_at` value. For `get_weather`, include an optional human-readable `location`.
 14. For `open_url`, accept only an `http` or `https` URL. Do not use `file`, shell, executable, or custom-protocol URLs.
-15. If a requested target or integration is not available in the capabilities, use `conversation` and explain that it is not configured. Do not claim the action was performed.
-16. Use `start_project` when the user asks to open VS Code in a configured project. Preserve the project identifier from the configured project-target context exactly.
+15. For `search_google`, use the user's concise search query for requests to search, look up, check current information, or find online information. The backend fetches and returns Google result text; do not use `open_url` or claim that a browser was opened.
+16. If a requested target or integration is not available in the capabilities, use `conversation` and explain that it is not configured. Do not claim the action was performed.
+17. Use `start_project` when the user asks to open VS Code in a configured project. Preserve the project identifier from the configured project-target context exactly.
 
 
 Output schema:
@@ -137,6 +139,16 @@ User: Give me an update.
   "action": "get_updates",
   "arguments": {},
   "message": "Checking for updates."
+}
+
+User: Check the color coded rainfall warning for Cebu province right now.
+
+{
+  "action": "search_google",
+  "arguments": {
+    "query": "color coded rainfall warning for Cebu province right now"
+  },
+  "message": "Searching Google."
 }
 
 User: Open VS Code on the configured project named project-name.
