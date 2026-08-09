@@ -49,4 +49,6 @@ def test_command_route_uses_prompt_intent_and_registered_handler():
     assert response.status_code == 200
     assert response.json()["handled"] is True
     assert response.json()["message"] == "It is 11:30 PM."
-    assert provider.system == DEFAULT_SYSTEM_PROMPT_PATH.read_text(encoding="utf-8")
+    canonical_prompt = DEFAULT_SYSTEM_PROMPT_PATH.read_text(encoding="utf-8")
+    assert provider.system.startswith(canonical_prompt)
+    assert "Configured project identifiers:" in provider.system

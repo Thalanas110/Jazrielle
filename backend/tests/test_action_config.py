@@ -101,23 +101,17 @@ def test_load_action_config_discovers_projects_when_project_map_is_empty(tmp_pat
     assert config.projects["demo"].process_name == "Code.exe"
 
 
-def test_default_projects_are_vscode_targets_inside_development_root():
+def test_default_projects_are_discovered_inside_development_root():
     config = load_action_config(DEFAULT_ACTION_CONFIG_PATH)
 
     assert config.settings.project_root.name == "development"
-    assert set(config.projects) == {
-        "tda car rental",
-        "icarewebsitenew",
-        "stagedeck",
-        "jazrielle",
-        "botchabuster",
-        "examhub",
-        "meatlens-training-2",
-    }
+    assert config.projects
+    assert "jazrielle" in config.projects
     assert all(
         project.start_command == ["cmd.exe", "/d", "/s", "/c", "code.cmd ."]
         for project in config.projects.values()
     )
+    assert all(project.process_name == "Code.exe" for project in config.projects.values())
     assert all(
         project.working_directory.is_relative_to(config.settings.project_root)
         for project in config.projects.values()
