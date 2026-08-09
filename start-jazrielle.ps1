@@ -7,7 +7,8 @@ $frontendDir = Join-Path $rootDir "frontend"
 $condaCommand = Get-Command conda.exe -ErrorAction SilentlyContinue
 if (-not $condaCommand) {
     $condaCandidates = @(
-        (Join-Path $env:USERPROFILE "anaconda3\Scripts\conda.exe")
+        (Join-Path $env:USERPROFILE "anaconda3\Scripts\conda.exe"),
+        (Join-Path $env:USERPROFILE "miniconda3\Scripts\conda.exe")
     )
     $condaPath = $condaCandidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
 } else {
