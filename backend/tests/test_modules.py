@@ -64,6 +64,23 @@ async def test_execute_command_uses_canonical_prompt_and_model_intent():
 
 
 @pytest.mark.anyio
+async def test_execute_command_appends_discovered_project_context():
+    provider = ConfiguredProvider()
+    provider.response = '{"action":"conversation","arguments":{},"message":"Understood."}'
+    registry = ActionRegistry(
+        {"conversation": lambda intent: {"message": intent.message, "handled": True}},
+        project_identifiers=("jazrielle", "business/portal"),
+    )
+    service = AssistantService(provider, "canonical prompt", action_registry=registry)
+
+    await service.execute_command("open VS Code on jazrielle")
+
+    assert "Configured project identifiers:" in provider.system
+    assert "- business/portal" in provider.system
+    assert "- jazrielle" in provider.system
+
+
+@pytest.mark.anyio
 async def test_assistant_service_returns_provider_inference():
     provider = ConfiguredProvider()
 

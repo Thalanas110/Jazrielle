@@ -31,9 +31,15 @@ class AssistantService:
     async def execute_command(self, command: str) -> CommandResult:
         if self._action_registry is None:
             return execute_command(command)
-        _, response = await self._model_provider.generate(command, self._system_prompt)
+        _, response = await self._model_provider.generate(command, self._command_system_prompt())
         return self._action_registry.execute(parse_intent(response))
 
     async def generate_inference(self, prompt: str) -> InferenceResult:
         model, response = await self._model_provider.generate(prompt, self._system_prompt)
         return InferenceResult(model=model, response=response)
+
+    def _command_system_prompt(self) -> str:
+        if self._action_registry is None:
+            return self._system_prompt
+        context = self._action_registry.get_project_prompt_context()
+        return f"{self._system_prompt}\n\n{context}" if context else self._system_prompt

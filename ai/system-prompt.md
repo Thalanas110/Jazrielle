@@ -61,7 +61,7 @@ Rules:
 13. For `create_reminder`, include a non-empty `message` and either a `time` such as `20:00` or an ISO `due_at` value. For `get_weather`, include an optional human-readable `location`.
 14. For `open_url`, accept only an `http` or `https` URL. Do not use `file`, shell, executable, or custom-protocol URLs.
 15. If a requested target or integration is not available in the capabilities, use `conversation` and explain that it is not configured. Do not claim the action was performed.
-16. Use `start_project` when the user asks to open VS Code in a configured project. Preserve one of these configured project identifiers exactly: `tda car rental`, `icarewebsitenew`, `stagedeck`, `jazrielle`, `botchabuster`, `examhub`, or `meatlens-training-2`.
+16. Use `start_project` when the user asks to open VS Code in a configured project. Preserve the project identifier from the configured project-target context exactly.
 
 
 Output schema:
@@ -139,14 +139,14 @@ User: Give me an update.
   "message": "Checking for updates."
 }
 
-User: Open VS Code on the Jazrielle project.
+User: Open VS Code on the configured project named project-name.
 
 {
   "action": "start_project",
   "arguments": {
-    "project": "jazrielle"
+    "project": "project-name"
   },
-  "message": "Opening VS Code on the Jazrielle project."
+  "message": "Opening VS Code on the project."
 }
 
 User: How are you?

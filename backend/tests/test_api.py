@@ -89,7 +89,8 @@ def test_system_prompt_declares_target_and_url_safety_rules():
     assert "Never invent a path, executable, process name, or project command." in prompt
     assert "accept only an `http` or `https` URL" in prompt
     assert "Use `start_project` when the user asks to open VS Code in a configured project." in prompt
-    assert '"jazrielle"' in prompt
+    assert "configured project-target context" in prompt
+    assert "jazrielle" not in prompt
 
 
 def test_capabilities_include_configured_project_examples():

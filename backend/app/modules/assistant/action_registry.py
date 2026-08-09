@@ -1,4 +1,4 @@
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
 import subprocess
 from typing import Any
@@ -38,11 +38,16 @@ class UnknownActionError(ValueError):
 
 
 class ActionRegistry:
-    def __init__(self, definitions: Mapping[str, ActionDefinition | ActionHandler]):
+    def __init__(
+        self,
+        definitions: Mapping[str, ActionDefinition | ActionHandler],
+        project_identifiers: Iterable[str] = (),
+    ):
         self._definitions = {
             action_id: self._coerce_definition(action_id, definition)
             for action_id, definition in definitions.items()
         }
+        self._project_identifiers = tuple(sorted(set(project_identifiers)))
 
     def execute(self, intent: AssistantIntent) -> CommandResult:
         definition = self._definitions.get(intent.action)
@@ -61,6 +66,12 @@ class ActionRegistry:
             )
             for definition in self._definitions.values()
         ]
+
+    def get_project_prompt_context(self) -> str:
+        if not self._project_identifiers:
+            return ""
+        lines = "\n".join(f"- {identifier}" for identifier in self._project_identifiers)
+        return f"Configured project identifiers:\n{lines}"
 
     @staticmethod
     def _coerce_definition(
@@ -373,7 +384,8 @@ def build_action_registry(config: Any = None, adapters: Any = None) -> ActionReg
                 examples=["show git status"],
                 handler=git_status,
             ),
-        }
+        },
+        project_identifiers=action_config.projects.keys(),
     )
 
 
