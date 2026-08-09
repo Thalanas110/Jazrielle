@@ -4,7 +4,20 @@ import argparse
 import os
 import sys
 from collections.abc import Callable, Sequence
+from pathlib import Path
 from typing import Any
+
+
+def _open_log_stream() -> Any:
+    log_path = os.environ.get("JAZRIELLE_LOG_PATH")
+    if log_path:
+        try:
+            path = Path(log_path)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            return path.open("a", encoding="utf-8")
+        except OSError:
+            pass
+    return open(os.devnull, "w", encoding="utf-8")
 
 
 def configure_stdio() -> None:
@@ -12,9 +25,9 @@ def configure_stdio() -> None:
     if sys.stdin is None:
         sys.stdin = open(os.devnull, "r", encoding="utf-8")
     if sys.stdout is None:
-        sys.stdout = open(os.devnull, "w", encoding="utf-8")
+        sys.stdout = _open_log_stream()
     if sys.stderr is None:
-        sys.stderr = open(os.devnull, "w", encoding="utf-8")
+        sys.stderr = _open_log_stream()
 
 
 configure_stdio()
