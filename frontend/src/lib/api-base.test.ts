@@ -15,12 +15,14 @@ describe('getApiBaseUrl', () => {
   });
 
   it('uses the browser proxy outside Tauri', () => {
+    vi.stubEnv('VITE_API_URL', '');
     vi.stubGlobal('__TAURI_INTERNALS__', undefined);
 
     expect(getApiBaseUrl()).toBe('/api');
   });
 
   it('uses the loopback backend inside Tauri', () => {
+    vi.stubEnv('VITE_API_URL', '');
     vi.stubGlobal('__TAURI_INTERNALS__', { invoke: vi.fn() });
 
     expect(getApiBaseUrl()).toBe('http://127.0.0.1:8000/api');

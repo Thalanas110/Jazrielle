@@ -2,7 +2,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { isTauriRuntime } from './tauri-window';
 
 export function getApiBaseUrl(): string {
-  return import.meta.env.VITE_API_URL ?? (isTauriRuntime() ? 'http://127.0.0.1:8000/api' : '/api');
+  return import.meta.env.VITE_API_URL || (isTauriRuntime() ? 'http://127.0.0.1:8000/api' : '/api');
 }
 
 async function commandError(response: Response): Promise<Error> {
