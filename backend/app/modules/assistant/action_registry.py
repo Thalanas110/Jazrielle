@@ -10,8 +10,11 @@ from app.modules.assistant.action_config import AssistantActionConfig
 from app.modules.assistant.adapters.metrics import LocalMetricsAdapter, MetricsAdapter
 from app.modules.assistant.adapters.media import MediaAdapter, WindowsMediaAdapter
 from app.modules.assistant.adapters.network import (
-    GoogleSearchProvider,
+    FetchProvider,
+    SearchNotConfiguredError,
     SearchProvider,
+    TinyFishFetchProvider,
+    TinyFishSearchProvider,
     UpdateProvider,
     WeatherProvider,
     WttrWeatherProvider,
@@ -91,7 +94,14 @@ class ActionRegistry:
         )
 
 
-def build_action_registry(config: Any = None, adapters: Any = None) -> ActionRegistry:
+def build_action_registry(
+    config: Any = None,
+    adapters: Any = None,
+    *,
+    tinyfish_api_key: str | None = None,
+    tinyfish_location: str = "PH",
+    tinyfish_language: str = "en",
+) -> ActionRegistry:
     action_config: AssistantActionConfig = config or AssistantActionConfig()
     system: SystemAdapter = getattr(adapters, "system", None) or LocalSystemAdapter()
     metrics: MetricsAdapter = getattr(adapters, "metrics", None) or LocalMetricsAdapter()
@@ -102,7 +112,12 @@ def build_action_registry(config: Any = None, adapters: Any = None) -> ActionReg
     )
     weather: WeatherProvider = getattr(adapters, "weather", None) or WttrWeatherProvider()
     updates: UpdateProvider = getattr(adapters, "updates", None) or WingetUpdateProvider()
-    search: SearchProvider = getattr(adapters, "search", None) or GoogleSearchProvider()
+    search: SearchProvider = getattr(adapters, "search", None) or TinyFishSearchProvider(
+        tinyfish_api_key,
+        location=tinyfish_location,
+        language=tinyfish_language,
+    )
+    fetch: FetchProvider = getattr(adapters, "fetch", None) or TinyFishFetchProvider(tinyfish_api_key)
     git: GitAdapter = getattr(adapters, "git", None) or LocalGitAdapter()
 
     def cpu_usage(intent: AssistantIntent) -> CommandResult:
@@ -242,16 +257,28 @@ def build_action_registry(config: Any = None, adapters: Any = None) -> ActionReg
         query = value.strip()
         try:
             results = search.search(query)
+        except SearchNotConfiguredError:
+            return CommandResult(
+                message="Web search is not configured. Add TINYFISH_API_KEY to backend/.env.",
+                handled=False,
+            )
         except (OSError, TimeoutError, ValueError):
-            return CommandResult(message="Google search is temporarily unavailable.", handled=False)
+            return CommandResult(message="Web search is temporarily unavailable.", handled=False)
         if not results:
-            return CommandResult(message=f'No Google results found for "{query}".', handled=True)
+            return CommandResult(message=f'No web results found for "{query}".', handled=True)
+        try:
+            fetched_pages = fetch.fetch([result.url for result in results[:3]], query)
+        except (OSError, SearchNotConfiguredError, TimeoutError, ValueError):
+            fetched_pages = {}
         summaries = []
         for result in results[:3]:
-            summary = f"{result.title}: {result.snippet}" if result.snippet else result.title
+            page = fetched_pages.get(result.url)
+            content = page.text if page is not None else result.snippet
+            compact_content = " ".join(content.split())[:1200].rstrip()
+            summary = f"{result.title}: {compact_content}" if compact_content else result.title
             summaries.append(f"{summary} ({result.url})")
         return CommandResult(
-            message=f'Google results for "{query}": ' + "; ".join(summaries),
+            message=f'Web results for "{query}": ' + "; ".join(summaries),
             handled=True,
         )
 
@@ -402,9 +429,9 @@ def build_action_registry(config: Any = None, adapters: Any = None) -> ActionReg
             ),
             "search_google": ActionDefinition(
                 id="search_google",
-                label="Google search",
-                description="Search Google and return result text without opening a browser.",
-                examples=["search Google for rainfall warnings"],
+                label="Web search",
+                description="Search the web and fetch result text without opening a browser.",
+                examples=["search the web for rainfall warnings"],
                 handler=search_google,
             ),
             "git_status": ActionDefinition(

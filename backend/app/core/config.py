@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     action_config_path: str = str(DEFAULT_ACTION_CONFIG_PATH)
     model_context_size: int = 4096
     model_max_tokens: int = 512
+    tinyfish_api_key: str | None = None
+    tinyfish_location: str = "PH"
+    tinyfish_language: str = "en"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

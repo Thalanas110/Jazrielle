@@ -37,7 +37,13 @@ def create_app(
     assistant_service = AssistantService(
         resolved_provider,
         system_prompt,
-        action_registry=build_action_registry(action_config, adapters),
+        action_registry=build_action_registry(
+            action_config,
+            adapters,
+            tinyfish_api_key=resolved_settings.tinyfish_api_key,
+            tinyfish_location=resolved_settings.tinyfish_location,
+            tinyfish_language=resolved_settings.tinyfish_language,
+        ),
     )
     application.include_router(build_health_router(resolved_provider))
     application.include_router(build_assistant_router(assistant_service))

@@ -3,10 +3,10 @@ from types import SimpleNamespace
 from fastapi.testclient import TestClient
 
 from app.core.config import DEFAULT_SYSTEM_PROMPT_PATH
-from app.modules.assistant.adapters.network import SearchResult
+from app.modules.assistant.adapters.network import FetchedPage, SearchResult
 from app.main import create_app
 from app.modules.assistant.model import ModelStatus
-from tests.support import FakeSearchProvider
+from tests.support import FakeFetchProvider, FakeSearchProvider
 
 
 class ConfiguredJsonProvider:
@@ -57,6 +57,7 @@ def test_command_route_uses_prompt_intent_and_registered_handler():
 
 
 def test_google_search_command_returns_text_without_opening_a_browser():
+    url = "https://pagasa.dost.gov.ph/"
     provider = ConfiguredJsonProvider(
         '{"action":"search_google","arguments":{"query":"rainfall warning for Cebu"},"message":"Searching Google."}'
     )
@@ -64,14 +65,17 @@ def test_google_search_command_returns_text_without_opening_a_browser():
         [
             SearchResult(
                 "PAGASA",
-                "https://pagasa.dost.gov.ph/",
+                url,
                 "Rainfall warning information.",
             ),
         ]
     )
+    fetch = FakeFetchProvider(
+        {url: FetchedPage("PAGASA", url, "Current yellow rainfall warning for Cebu.")}
+    )
     application = create_app(
         model_provider=provider,
-        adapters=SimpleNamespace(search=search),
+        adapters=SimpleNamespace(search=search, fetch=fetch),
     )
 
     response = TestClient(application).post(
@@ -81,5 +85,25 @@ def test_google_search_command_returns_text_without_opening_a_browser():
 
     assert response.status_code == 200
     assert response.json()["handled"] is True
-    assert "PAGASA" in response.json()["message"]
+    assert "Current yellow rainfall warning for Cebu." in response.json()["message"]
     assert response.json()["launchUrl"] is None
+
+
+def test_google_search_without_tinyfish_key_reports_configuration():
+    provider = ConfiguredJsonProvider(
+        '{"action":"search_google","arguments":{"query":"rainfall warning"},"message":"Searching."}'
+    )
+    application = create_app(model_provider=provider)
+
+    response = TestClient(application).post(
+        "/api/jarvis/execute",
+        json={"command": "check the rainfall warning"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "message": "Web search is not configured. Add TINYFISH_API_KEY to backend/.env.",
+        "handled": False,
+        "app": None,
+        "launchUrl": None,
+    }
