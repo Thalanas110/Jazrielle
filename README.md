@@ -14,7 +14,7 @@ The browser build can:
 - resolve explicitly allowlisted applications such as Calendar, Downloads, and Spotify;
 - expose a separate open-ended local inference panel.
 
-The browser can display an application result, but browser security prevents it from launching Windows applications directly. Native launching is reserved for a future desktop wrapper, such as Tauri, through the `window.jazrielleDesktop` bridge.
+The browser can display an application result, but browser security prevents it from launching Windows applications directly. The Tauri desktop shell provides the floating always-on-top launcher; application launching remains behind the narrow `window.jazrielleDesktop` bridge.
 
 ## Architecture
 
@@ -203,7 +203,7 @@ The development UI runs as a normal web page. It cannot call `CreateProcess`, la
 window.jazrielleDesktop.openTarget({ app, url })
 ```
 
-The wrapper, not the model, must map application targets to native operations. Tauri is the planned option for that boundary. Until then, configured project commands and web lookups can be handled by the local backend, while browser-only application launching remains unavailable.
+The wrapper, not the model, must map application targets to native operations. The current Tauri shell owns the floating window boundary, while configured project commands and web lookups continue to run through the local backend. Browser-only application launching remains unavailable until the bridge is implemented by the native shell.
 
 ## Testing and verification
 
@@ -221,6 +221,15 @@ Check the frontend types and production build:
 cd frontend
 npm run typecheck
 npm run build
+```
+
+Run the frontend tests and native Rust check:
+
+```powershell
+cd frontend
+npm run test:run
+cd ..\src-tauri
+cargo check
 ```
 
 ## Troubleshooting
