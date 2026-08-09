@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { isTauriRuntime, syncNativeWindow } from './tauri-window';
+import {
+  initializeNativeWindow,
+  isTauriRuntime,
+  listenForNativeFocus,
+  syncNativeWindow,
+} from './tauri-window';
 
 describe('tauri window adapter', () => {
   afterEach(() => vi.unstubAllGlobals());
@@ -12,5 +17,19 @@ describe('tauri window adapter', () => {
   it('does not reject when geometry is requested in the browser', async () => {
     vi.stubGlobal('__TAURI_INTERNALS__', undefined);
     await expect(syncNativeWindow('collapsed')).resolves.toBe(false);
+  });
+
+  it('keeps native startup a no-op in the browser', async () => {
+    vi.stubGlobal('__TAURI_INTERNALS__', undefined);
+
+    await expect(initializeNativeWindow()).resolves.toBe(false);
+  });
+
+  it('returns a harmless focus cleanup in the browser', async () => {
+    vi.stubGlobal('__TAURI_INTERNALS__', undefined);
+
+    const cleanup = await listenForNativeFocus(vi.fn());
+
+    expect(cleanup()).toBeUndefined();
   });
 });
