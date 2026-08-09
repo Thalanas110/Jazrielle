@@ -7,6 +7,11 @@
     "downloads": {
       "label": "Downloads",
       "launchTarget": "Downloads"
+    },
+    "spotify": {
+      "label": "Spotify",
+      "launchTarget": "Spotify",
+      "processName": "Spotify.exe"
     }
   },
   "projects": {},

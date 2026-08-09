@@ -138,6 +138,26 @@ def test_plain_text_model_response_becomes_a_safe_conversation():
     }
 
 
+def test_spotify_is_available_as_a_configured_application():
+    application = create_app(
+        model_provider=ConfiguredJsonProvider(
+            '{"action":"open_application","arguments":{"application":"spotify"},"message":"Opening Spotify."}'
+        )
+    )
+    response = TestClient(application).post(
+        "/api/jarvis/execute",
+        json={"command": "open spotify"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "message": "Opening Spotify.",
+        "handled": True,
+        "app": "Spotify",
+        "launchUrl": None,
+    }
+
+
 def test_inference_reports_model_not_configured():
     unavailable_client = TestClient(create_app(model_provider=UnavailableModelProvider()))
     response = unavailable_client.post(
