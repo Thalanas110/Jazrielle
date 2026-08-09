@@ -50,7 +50,7 @@ start-jazrielle.*         launch scripts for PowerShell, CMD, and Bash
 ## Prerequisites
 
 - Windows for the desktop adapters and intended runtime.
-- Conda or Miniconda.
+- Anaconda with `conda` available on `PATH` (the project uses the existing Anaconda installation; Miniconda is not required).
 - Python 3.11 through the provided Conda environment.
 - Node.js and npm for the frontend.
 - A local model file at `ai/qwen3-0.6b-q4_k_m.gguf` if model-backed commands and inference are required. GGUF files are intentionally ignored by Git.
