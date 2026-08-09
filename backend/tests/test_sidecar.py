@@ -1,3 +1,4 @@
+from app.main import app
 from sidecar import parse_args, run_server
 
 
@@ -16,6 +17,7 @@ def test_sidecar_passes_explicit_host_and_port_to_uvicorn():
 
     run_server(["--host", "127.0.0.1", "--port", "8011"], fake_runner)
 
+    assert calls[0][0] is app
     assert calls[0][1] == {
         "host": "127.0.0.1",
         "port": 8011,
