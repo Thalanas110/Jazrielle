@@ -1,0 +1,28 @@
+from __future__ import annotations
+
+import argparse
+from collections.abc import Callable, Sequence
+from typing import Any
+
+import uvicorn
+
+
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Jazrielle local API sidecar")
+    parser.add_argument("--host", default="127.0.0.1")
+    parser.add_argument("--port", default=8000, type=int)
+    return parser.parse_args(argv)
+
+
+def run_server(
+    argv: Sequence[str] | None = None,
+    server_runner: Callable[..., Any] = uvicorn.run,
+) -> None:
+    args = parse_args(argv)
+    from app.main import app
+
+    server_runner(app, host=args.host, port=args.port, log_level="warning")
+
+
+if __name__ == "__main__":
+    run_server()
