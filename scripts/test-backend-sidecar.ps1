@@ -46,7 +46,7 @@ try {
         -Wait `
         -WindowStyle Hidden | Out-Null
     Start-Sleep -Milliseconds 500
-    if (Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue) {
+    if (Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue) {
         throw "Sidecar process tree still owns smoke-test port $port after shutdown."
     }
 }
