@@ -6,8 +6,7 @@ ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 if ! command -v conda >/dev/null 2>&1; then
   for conda_init in \
     "${CONDA_PREFIX:-}/etc/profile.d/conda.sh" \
-    "$HOME/anaconda3/etc/profile.d/conda.sh" \
-    "$HOME/miniconda3/etc/profile.d/conda.sh"; do
+    "$HOME/anaconda3/etc/profile.d/conda.sh"; do
     if [[ -f "$conda_init" ]]; then
       # shellcheck source=/dev/null
       source "$conda_init"

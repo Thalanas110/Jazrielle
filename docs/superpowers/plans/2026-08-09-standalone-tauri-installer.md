@@ -69,7 +69,7 @@ Required behavior:
     Resolve the repository from PSScriptRoot.
     Require rustc host tuple x86_64-pc-windows-msvc.
     Require ai/qwen3-0.6b-q4_k_m.gguf.
-    Locate conda.exe or USERPROFILE/anaconda3/Scripts/conda.exe or USERPROFILE/miniconda3/Scripts/conda.exe.
+    Locate conda.exe or USERPROFILE/anaconda3/Scripts/conda.exe from the existing Anaconda installation.
     Run conda run --no-capture-output -n jazrielle-backend python -m PyInstaller.
     Use --noconfirm --clean --onefile --noconsole --name jazrielle-backend --paths backend.
     Use --collect-all llama_cpp and --collect-all pycaw.
@@ -175,21 +175,22 @@ Files:
 Required behavior:
     Resolve target triple and generated sidecar.
     Set MODEL_PATH, SYSTEM_PROMPT_PATH, ACTION_CONFIG_PATH, and CORS_ORIGINS to ai resources.
-    Start sidecar hidden on 127.0.0.1:8000.
+    Select an unused high port and start the sidecar hidden on 127.0.0.1.
     Poll /health for at most 15 seconds.
-    Stop only the started PID in a finally block.
+    Terminate the started process tree in a finally block.
+    Assert the smoke-test port is free after shutdown.
     Throw if health never returns status ok.
 
-- [ ] Write the script with the behavior above.
-- [ ] Commit: test: add packaged backend smoke check.
+- [x] Write the script with the behavior above.
+- [x] Commit: test: add packaged backend smoke check.
 
 ### Task 12: Build and test the backend executable
 
-- [ ] Run conda env update -f backend/environment.yml --prune.
-- [ ] Run frontend: npm run build:backend-sidecar.
-- [ ] Verify src-tauri/binaries/jazrielle-backend-x86_64-pc-windows-msvc.exe exists and remains ignored.
-- [ ] Run the smoke script from the repository root; expected Sidecar health check passed.
-- [ ] Do not commit the generated executable.
+- [x] Run conda env update -f backend/environment.yml --prune using the existing Anaconda installation.
+- [x] Run frontend: npm run build:backend-sidecar.
+- [x] Verify src-tauri/binaries/jazrielle-backend-x86_64-pc-windows-msvc.exe exists and remains ignored.
+- [x] Run the smoke script from the repository root; expected Sidecar health check passed.
+- [x] Do not commit the generated executable.
 
 ### Task 13: Test native startup and shutdown
 
@@ -200,10 +201,10 @@ Required behavior:
 
 ### Task 14: Build the single installer
 
-- [ ] Run frontend: npm run tauri:build.
-- [ ] Verify NSIS and MSI artifacts under src-tauri/target/release/bundle.
-- [ ] Inspect artifact sizes; the model must be reflected in the installer size.
-- [ ] Keep generated installers uncommitted.
+- [x] Run frontend: npm run tauri:build; rerun after final sidecar changes before merge.
+- [x] Verify NSIS and MSI artifacts under src-tauri/target/release/bundle.
+- [x] Inspect artifact sizes; both produced artifacts are approximately 509 MB with the model bundled.
+- [x] Keep generated installers uncommitted.
 
 ### Task 15: Install and test the packaged application
 
@@ -216,11 +217,10 @@ Required behavior:
 Files:
 - Modify README.md if final commands or paths differ.
 
-- [ ] Run frontend: npm run test:run, npm run typecheck, npm run build.
-- [ ] Run src-tauri: cargo test and cargo check.
-- [ ] Run scripts/test-backend-sidecar.ps1.
+- [x] Run frontend: npm run test:run and npm run build; run npm run typecheck before merge.
+- [x] Run src-tauri: cargo test and cargo check.
+- [x] Run scripts/test-backend-sidecar.ps1.
 - [ ] Restore tracked frontend/dist/public if the build rewrites it.
-- [ ] Run git diff --check, git status --short, and git log --oneline --decorate -20.
-- [ ] Confirm only the pre-existing reference screenshot is untracked and no generated executable/installer is committed.
+- [x] Run git diff --check, git status --short, and git log --oneline --decorate -20.
+- [x] Confirm no generated executable or installer is committed; generated frontend/dist changes remain local build output.
 - [ ] Commit final documentation: docs: document standalone installer release.
-
