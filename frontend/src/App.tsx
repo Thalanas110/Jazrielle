@@ -191,14 +191,14 @@ function OrbCanvas({ active }: { active: boolean }) {
           const radius = 37 + ring * 12 + Math.sin(t * (ring + 1) + ring) * (active ? 3 : 1.5);
           context.beginPath();
           context.arc(cx, cy, radius, 0, Math.PI * 2);
-          context.strokeStyle = `hsla(${166 + ring * 18}, 72%, ${70 - ring * 8}%, ${0.32 - ring * 0.06})`;
+          context.strokeStyle = `hsla(${ring === 1 ? 334 : 180}, 100%, ${ring === 1 ? 50 : 62 - ring * 8}%, ${0.32 - ring * 0.06})`;
           context.lineWidth = ring === 0 ? 1.4 : 0.8;
           context.stroke();
         }
         const gradient = context.createRadialGradient(cx - 8, cy - 10, 1, cx, cy, 33);
-        gradient.addColorStop(0, active ? 'rgba(242, 255, 246, .98)' : 'rgba(218, 255, 237, .95)');
-        gradient.addColorStop(.25, 'rgba(117, 231, 196, .88)');
-        gradient.addColorStop(1, 'rgba(25, 130, 125, .06)');
+        gradient.addColorStop(0, active ? 'rgba(244, 239, 255, .98)' : 'rgba(226, 255, 255, .95)');
+        gradient.addColorStop(.25, 'rgba(0, 255, 255, .88)');
+        gradient.addColorStop(1, 'rgba(23, 6, 48, .06)');
         context.fillStyle = gradient;
         context.beginPath();
         context.arc(cx, cy, 29 + Math.sin(t) * (active ? 3 : 1), 0, Math.PI * 2);
@@ -206,7 +206,7 @@ function OrbCanvas({ active }: { active: boolean }) {
         for (let point = 0; point < 18; point += 1) {
           const angle = point * 2.4 + t * (active ? 1.5 : .45);
           const radius = 46 + (point % 3) * 9;
-          context.fillStyle = `hsla(${158 + point * 5}, 70%, 72%, ${point % 2 ? .22 : .48})`;
+          context.fillStyle = `hsla(${point % 3 === 0 ? 334 : 180}, 100%, 70%, ${point % 2 ? .22 : .48})`;
           context.fillRect(cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius, 1.5, 1.5);
         }
         frame += 1;
@@ -224,18 +224,18 @@ function OrbCanvas({ active }: { active: boolean }) {
     scene.add(group);
     const orb = new THREE.Mesh(
       new THREE.IcosahedronGeometry(0.72, 3),
-      new THREE.MeshBasicMaterial({ color: 0x79e7c4, wireframe: true, transparent: true, opacity: 0.82 }),
+      new THREE.MeshBasicMaterial({ color: 0x00ffff, wireframe: true, transparent: true, opacity: 0.82 }),
     );
     group.add(orb);
     const core = new THREE.Mesh(
       new THREE.SphereGeometry(0.47, 24, 24),
-      new THREE.MeshBasicMaterial({ color: 0xd9fff0, transparent: true, opacity: 0.2 }),
+      new THREE.MeshBasicMaterial({ color: 0xf4efff, transparent: true, opacity: 0.2 }),
     );
     group.add(core);
     const rings = [1.08, 1.3, 1.52].map((radius, index) => {
       const ring = new THREE.Mesh(
         new THREE.TorusGeometry(radius, index === 0 ? 0.009 : 0.006, 8, 96),
-        new THREE.MeshBasicMaterial({ color: index === 1 ? 0xf2a184 : 0x52cbbb, transparent: true, opacity: 0.36 - index * 0.07 }),
+        new THREE.MeshBasicMaterial({ color: index === 1 ? 0xff006e : 0x00ffff, transparent: true, opacity: 0.36 - index * 0.07 }),
       );
       ring.rotation.x = index * 0.7;
       ring.rotation.y = index * 0.35;
