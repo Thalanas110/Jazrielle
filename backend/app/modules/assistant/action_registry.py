@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
 import re
@@ -27,11 +29,11 @@ from app.modules.assistant.adapters.reminders import JsonReminderStore, Reminder
 from app.modules.assistant.adapters.system import LocalSystemAdapter, SystemAdapter
 
 
-ActionHandler = Callable[[AssistantIntent], CommandResult | Mapping[str, Any]]
-
 _SEARCH_MAX_RESULTS = 2
 _SEARCH_MAX_EXCERPT_CHARS = 650
 _SEARCH_MAX_MESSAGE_CHARS = 1000
+_SEARCH_MAX_SOURCE_ENTRY_CHARS = 3000
+_SEARCH_MAX_SOURCE_CHARS = 8000
 
 
 @dataclass(frozen=True)
@@ -41,6 +43,20 @@ class ActionDefinition:
     description: str
     examples: list[str]
     handler: ActionHandler
+
+
+@dataclass(frozen=True)
+class SearchContext:
+    source_material: str
+
+
+@dataclass(frozen=True)
+class ActionExecution:
+    result: CommandResult
+    search_context: SearchContext | None = None
+
+
+ActionHandler = Callable[[AssistantIntent], CommandResult | Mapping[str, Any] | ActionExecution]
 
 
 class UnknownActionError(ValueError):
@@ -60,11 +76,20 @@ class ActionRegistry:
         self._project_identifiers = tuple(sorted(set(project_identifiers)))
 
     def execute(self, intent: AssistantIntent) -> CommandResult:
+        result, _ = self.execute_with_context(intent)
+        return result
+
+    def execute_with_context(self, intent: AssistantIntent) -> tuple[CommandResult, SearchContext | None]:
         definition = self._definitions.get(intent.action)
         if definition is None:
             raise UnknownActionError(f"No handler is registered for {intent.action}.")
         result = definition.handler(intent)
-        return result if isinstance(result, CommandResult) else CommandResult.model_validate(result)
+        if isinstance(result, ActionExecution):
+            return result.result, result.search_context
+        return (
+            result if isinstance(result, CommandResult) else CommandResult.model_validate(result),
+            None,
+        )
 
     def get_capabilities(self) -> list[Capability]:
         return [
@@ -255,7 +280,7 @@ def build_action_registry(
             return CommandResult(message="Only standard web URLs can be opened.", handled=False)
         return CommandResult(message=f"Opening {parsed.netloc}.", handled=True, launchUrl=value.strip())
 
-    def search_google(intent: AssistantIntent) -> CommandResult:
+    def search_google(intent: AssistantIntent) -> CommandResult | ActionExecution:
         value = intent.arguments.get("query")
         if not isinstance(value, str) or not value.strip():
             return CommandResult(message="A Google search query is required.", handled=False)
@@ -276,16 +301,30 @@ def build_action_registry(
         except (OSError, SearchNotConfiguredError, TimeoutError, ValueError):
             fetched_pages = {}
         summaries = []
+        source_blocks = []
         for result in results[:_SEARCH_MAX_RESULTS]:
             page = fetched_pages.get(result.url)
             content = page.text if page is not None else result.snippet
             compact_content = _search_excerpt(content, query)
             summary = f"{result.title}: {compact_content}" if compact_content else result.title
             summaries.append(f"{summary} ({result.url})")
+            source_blocks.append(
+                _format_search_source(
+                    title=result.title,
+                    url=result.url,
+                    snippet=result.snippet,
+                    content=content,
+                )
+            )
         message = f'Web results for "{query}": ' + "; ".join(summaries)
-        return CommandResult(
-            message=message[:_SEARCH_MAX_MESSAGE_CHARS].rstrip(),
-            handled=True,
+        return ActionExecution(
+            result=CommandResult(
+                message=message[:_SEARCH_MAX_MESSAGE_CHARS].rstrip(),
+                handled=True,
+            ),
+            search_context=SearchContext(
+                source_material="\n\n".join(source_blocks)[:_SEARCH_MAX_SOURCE_CHARS].rstrip()
+            ),
         )
 
     def git_status(intent: AssistantIntent) -> CommandResult:
@@ -481,3 +520,13 @@ def _search_excerpt(text: str, query: str) -> str:
     selected = sorted(ranked_segments, key=lambda item: (-item[0], item[1]))[:3]
     selected.sort(key=lambda item: item[1])
     return " ".join(item[2] for item in selected)[:_SEARCH_MAX_EXCERPT_CHARS].rstrip()
+
+
+def _format_search_source(*, title: str, url: str, snippet: str, content: str) -> str:
+    source_content = content[:_SEARCH_MAX_SOURCE_ENTRY_CHARS].strip()
+    return (
+        f"Title: {title}\n"
+        f"URL: {url}\n"
+        f"Snippet: {snippet}\n"
+        f"Fetched content:\n{source_content}"
+    )
