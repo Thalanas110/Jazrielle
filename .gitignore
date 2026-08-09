@@ -2,3 +2,10 @@
 .env
 node_modules/
 .worktrees/
+
+# Python bytecode / caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+dist/**

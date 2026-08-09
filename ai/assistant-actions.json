@@ -18,7 +18,7 @@
   "settings": {
     "projectRoot": "../../../",
     "reminderPath": "reminders.json",
-    "weatherLocation": "Manila, Philippines",
+    "weatherLocation": "Olongapo, Philippines",
     "repositoryPath": ".."
   }
 }
