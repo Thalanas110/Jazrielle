@@ -124,7 +124,9 @@ Open the frontend at `http://localhost:20380`. The backend is available at `http
 }
 ```
 
-The current application targets are Calendar, Downloads, and Spotify. The current project list is empty. Project support is designed for named, explicitly configured projects with a fixed command and working directory; it must not accept a raw path or command from the model. The planned desktop integration will restrict project directories to the approved `Desktop\development` tree and use a fixed VS Code launch command.
+The current application targets are Calendar, Downloads, and Spotify. The configured project targets are `tda car rental`, `icarewebsitenew`, `stagedeck`, `jazrielle`, `botchabuster`, `examhub`, and `meatlens-training-2`. Each project uses the fixed VS Code command `cmd.exe /d /s /c "code.cmd ."` and a working directory under `settings.projectRoot`, which is the approved `Desktop\development` tree. Projects outside that root are rejected during startup.
+
+Project support uses named, explicitly configured projects with fixed commands and working directories; it does not accept a raw path or command from the model. For example, “open VS Code on the Jazrielle project” selects `start_project` with `project: "jazrielle"`.
 
 Restart the backend after editing `assistant-actions.json`, because configuration is loaded during application startup.
 
@@ -152,13 +154,13 @@ The command response contains a user-facing `message`, a `handled` flag, and opt
 
 ## Browser and native-desktop boundary
 
-The development UI runs as a normal web page. It cannot call `CreateProcess`, launch `code.exe`, open Spotify directly, or perform other unrestricted desktop actions. When a native wrapper is added, it should expose a narrow bridge such as:
+The development UI runs as a normal web page. It cannot call `CreateProcess`, launch `code.exe`, open Spotify directly, or perform other unrestricted desktop actions. The local backend can execute the fixed, allowlisted project command; application launch metadata still requires a native wrapper. When one is added, it should expose a narrow bridge such as:
 
 ```ts
 window.jazrielleDesktop.openTarget({ app, url })
 ```
 
-The wrapper, not the model, must map the validated target to a native operation. Tauri is the planned option for this boundary. Until then, command results and web URLs can work in the browser, while local application launching requires a native host.
+The wrapper, not the model, must map application targets to native operations. Tauri is the planned option for that boundary. Until then, configured project commands can be handled by the local backend, while browser-only application launching remains unavailable.
 
 ## Testing and verification
 

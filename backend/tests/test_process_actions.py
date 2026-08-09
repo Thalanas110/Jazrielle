@@ -1,10 +1,12 @@
 from pathlib import Path
 from types import SimpleNamespace
 
+from app.core.config import DEFAULT_ACTION_CONFIG_PATH
 from app.modules.assistant.action_config import (
     ApplicationTarget,
     AssistantActionConfig,
     ProjectTarget,
+    load_action_config,
 )
 from app.modules.assistant.action_registry import build_action_registry
 from tests.support import intent
@@ -83,4 +85,22 @@ def test_start_and_stop_project_use_configured_values(tmp_path):
     assert processes.calls == [
         ("start", ["python", "-m", "demo"], tmp_path),
         ("stop", "demo.exe"),
+    ]
+
+
+def test_default_jazrielle_project_uses_fixed_vscode_command():
+    processes = FakeProcessAdapter()
+    config = load_action_config(DEFAULT_ACTION_CONFIG_PATH)
+    registry = build_action_registry(config, SimpleNamespace(processes=processes))
+
+    result = registry.execute(intent("start_project", {"project": "jazrielle"}))
+
+    assert result.handled is True
+    assert result.message == "Starting jazrielle."
+    assert processes.calls == [
+        (
+            "start",
+            ["cmd.exe", "/d", "/s", "/c", "code.cmd ."],
+            config.projects["jazrielle"].working_directory,
+        )
     ]

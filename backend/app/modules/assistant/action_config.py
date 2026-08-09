@@ -34,6 +34,7 @@ class ProjectTarget(BaseModel):
 class ActionSettings(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
+    project_root: Path = Field(default=Path("../../../"), alias="projectRoot")
     reminder_path: Path = Field(default=Path("reminders.json"), alias="reminderPath")
     weather_location: str = Field(default="Manila, Philippines", alias="weatherLocation", min_length=1)
     repository_path: Path = Field(default=Path(".."), alias="repositoryPath")
@@ -53,8 +54,13 @@ def load_action_config(path: Path) -> AssistantActionConfig:
         raise ConfigError(f"Invalid assistant action configuration: {path}") from error
 
     base_dir = path.resolve().parent
-    for project in config.projects.values():
+    config.settings.project_root = _resolve_existing_directory(config.settings.project_root, base_dir)
+    for project_name, project in config.projects.items():
         project.working_directory = _resolve_existing_directory(project.working_directory, base_dir)
+        if not project.working_directory.is_relative_to(config.settings.project_root):
+            raise ConfigError(
+                f"Configured project outside the configured project root: {project_name}"
+            )
     config.settings.reminder_path = _resolve_path(config.settings.reminder_path, base_dir)
     config.settings.repository_path = _resolve_existing_directory(config.settings.repository_path, base_dir)
     return config

@@ -88,6 +88,16 @@ def test_system_prompt_declares_target_and_url_safety_rules():
 
     assert "Never invent a path, executable, process name, or project command." in prompt
     assert "accept only an `http` or `https` URL" in prompt
+    assert "Use `start_project` when the user asks to open VS Code in a configured project." in prompt
+    assert '"jazrielle"' in prompt
+
+
+def test_capabilities_include_configured_project_examples():
+    body = client.get("/api/jarvis/capabilities").json()
+
+    start_project = next(item for item in body["capabilities"] if item["id"] == "start_project")
+
+    assert "open VS Code on jazrielle" in start_project["examples"]
 
 
 def test_known_command_is_interpreted_without_shell_execution():

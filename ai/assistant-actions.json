@@ -14,8 +14,45 @@
       "processName": "Spotify.exe"
     }
   },
-  "projects": {},
+  "projects": {
+    "tda car rental": {
+      "workingDirectory": "../../../business/tda car rental",
+      "startCommand": ["cmd.exe", "/d", "/s", "/c", "code.cmd ."],
+      "processName": "Code.exe"
+    },
+    "icarewebsitenew": {
+      "workingDirectory": "../../../church/icarewebsitenew",
+      "startCommand": ["cmd.exe", "/d", "/s", "/c", "code.cmd ."],
+      "processName": "Code.exe"
+    },
+    "stagedeck": {
+      "workingDirectory": "../../../church/stagedeck",
+      "startCommand": ["cmd.exe", "/d", "/s", "/c", "code.cmd ."],
+      "processName": "Code.exe"
+    },
+    "jazrielle": {
+      "workingDirectory": "../../../personal/jazrielle",
+      "startCommand": ["cmd.exe", "/d", "/s", "/c", "code.cmd ."],
+      "processName": "Code.exe"
+    },
+    "botchabuster": {
+      "workingDirectory": "../../../school/botchabuster",
+      "startCommand": ["cmd.exe", "/d", "/s", "/c", "code.cmd ."],
+      "processName": "Code.exe"
+    },
+    "examhub": {
+      "workingDirectory": "../../../school/ExamHub",
+      "startCommand": ["cmd.exe", "/d", "/s", "/c", "code.cmd ."],
+      "processName": "Code.exe"
+    },
+    "meatlens-training-2": {
+      "workingDirectory": "../../../school/meatlens-training-2",
+      "startCommand": ["cmd.exe", "/d", "/s", "/c", "code.cmd ."],
+      "processName": "Code.exe"
+    }
+  },
   "settings": {
+    "projectRoot": "../../../",
     "reminderPath": "reminders.json",
     "weatherLocation": "Manila, Philippines",
     "repositoryPath": ".."

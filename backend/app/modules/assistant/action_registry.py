@@ -226,6 +226,11 @@ def build_action_registry(config: Any = None, adapters: Any = None) -> ActionReg
         message = git.status(action_config.settings.repository_path)
         return CommandResult(message=message or "No Git status returned.", handled=True)
 
+    project_examples = (
+        [f"open VS Code on {project}" for project in action_config.projects]
+        or ["start the demo project"]
+    )
+
     return ActionRegistry(
         {
             "conversation": ActionDefinition(
@@ -295,7 +300,7 @@ def build_action_registry(config: Any = None, adapters: Any = None) -> ActionReg
                 id="start_project",
                 label="Start project",
                 description="Start a configured project.",
-                examples=["start the demo project"],
+                examples=project_examples,
                 handler=start_project,
             ),
             "stop_project": ActionDefinition(

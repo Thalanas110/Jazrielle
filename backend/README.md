@@ -21,7 +21,7 @@ At startup, the backend loads the authoritative system prompt from `ai/system-pr
 
 ## Action configuration
 
-`ai/assistant-actions.json` is the explicit allowlist for application and project targets. Add an application under `applications` with a label and launch target, or add a project under `projects` with an existing working directory, fixed `startCommand` array, and optional process name. Model output can select only these configured identifiers; it cannot provide executable paths, process names, or command arrays.
+`ai/assistant-actions.json` is the explicit allowlist for application and project targets. Applications include Calendar, Downloads, and Spotify. Projects include the named targets under the approved `Desktop\development` tree. The `settings.projectRoot` value defines that root; project directories outside it are rejected during startup. Each configured project uses a fixed VS Code command (`cmd.exe /d /s /c "code.cmd ."`) and optional `Code.exe` process name. Model output can select only these configured identifiers; it cannot provide executable paths, process names, or command arrays.
 
 The command endpoint supports the actions declared in `ai/system-prompt.md`: applications, system status and metrics, time/date/weather, media and volume, reminders, updates, project controls, Git status, web URLs, and conversation. The backend validates every model response before dispatching it to a registered handler.
 
