@@ -1,0 +1,37 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Jazrielle",
+  "version": "0.1.0",
+  "identifier": "com.jazrielle.desktop",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
+    "devUrl": "http://localhost:20380",
+    "frontendDist": "../frontend/dist/public"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Jazrielle",
+        "width": 80,
+        "height": 80,
+        "minWidth": 80,
+        "minHeight": 80,
+        "maxWidth": 420,
+        "maxHeight": 640,
+        "resizable": false,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "visible": false,
+        "shadow": false,
+        "center": false
+      }
+    ]
+  },
+  "bundle": {
+    "active": false
+  }
+}

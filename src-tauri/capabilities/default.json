@@ -1,0 +1,16 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "main-capability",
+  "description": "Capability for the Jazrielle main window",
+  "windows": ["main"],
+  "permissions": [
+    "core:event:allow-listen",
+    "core:window:allow-current-monitor",
+    "core:window:allow-set-always-on-top",
+    "core:window:allow-set-focus",
+    "core:window:allow-set-position",
+    "core:window:allow-set-size",
+    "core:window:allow-set-skip-taskbar",
+    "core:window:allow-show"
+  ]
+}

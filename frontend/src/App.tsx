@@ -1,12 +1,14 @@
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
+import { AssistantPanel } from '@/components/assistant-panel';
+import { AssistantContent } from '@/components/assistant-content';
+import { FloatingLauncher } from '@/components/floating-launcher';
 import {
-  Activity,
   ArrowUpRight,
   ChevronDown,
   Command,
@@ -15,12 +17,10 @@ import {
   History,
   LoaderCircle,
   LockKeyhole,
-  MessageSquareText,
   RefreshCw,
   Send,
   Sparkles,
   Terminal,
-  X,
 } from 'lucide-react';
 import {
   getGetJarvisCapabilitiesQueryKey,
@@ -34,10 +34,21 @@ import {
   useLocation,
   Router as WouterRouter,
 } from 'wouter';
+import { initialLauncherState, launcherReducer } from '@/lib/launcher-state';
+import { isTauriRuntime } from '@/lib/tauri-window';
+import { useLauncherWindow } from '@/lib/use-launcher-window';
 
 const queryClient = new QueryClient();
 
 function Home() {
+  const [launcherState, dispatch] = useReducer(
+    launcherReducer,
+    isTauriRuntime() ? initialLauncherState : { mode: 'expanded' as const },
+  );
+  const launcherRoot = useRef<HTMLDivElement>(null);
+  const closeLauncher = useCallback(() => dispatch({ type: 'close' }), []);
+  const openLauncher = useCallback(() => dispatch({ type: 'open' }), []);
+  useLauncherWindow(launcherState.mode, launcherRoot, closeLauncher);
   const [command, setCommand] = useState('');
   const [inference, setInference] = useState('');
   const [history, setHistory] = useState<Array<{ command: string; message: string; handled: boolean }>>([]);
@@ -49,10 +60,12 @@ function Home() {
   const executeCommand = useExecuteJarvisCommand();
   const runInference = useRunJarvisInference();
   const caps = capabilityQuery.data;
+  const isExpanded = launcherState.mode === 'expanded';
+  const isThinking = executeCommand.isPending || runInference.isPending;
 
   useEffect(() => {
-    commandInput.current?.focus();
-  }, []);
+    if (isExpanded) commandInput.current?.focus();
+  }, [isExpanded]);
 
   const submitCommand = (value = command) => {
     const next = value.trim();
@@ -88,21 +101,14 @@ function Home() {
   ];
 
   return (
-    <main className="jazrielle-stage">
-      <div className="jazrielle-shell" data-testid="jazrielle-shell">
-        <header className="shell-header">
-          <div className="brand-lockup">
-            <div className="brand-mark" aria-hidden="true"><Activity size={17} strokeWidth={2.4} /></div>
-            <div>
-              <p className="eyebrow">LOCAL COMPANION</p>
-              <h1 data-testid="text-assistant-name">{caps?.assistant ?? 'JAZRIELLE'}</h1>
-            </div>
-          </div>
-          <div className="header-actions">
-            <div className="secure-state" data-testid="status-local-mode"><span className="pulse-dot" /> {caps?.localMode === false ? 'REMOTE' : 'LOCAL ONLY'}</div>
-            <button type="button" className="icon-button" aria-label="Dismiss shell" data-testid="button-dismiss-shell" onClick={() => window.close()}><X size={16} /></button>
-          </div>
-        </header>
+    <main className={`jazrielle-stage ${isExpanded ? 'is-expanded' : 'is-collapsed'}`} ref={launcherRoot}>
+      {!isExpanded ? (
+        <FloatingLauncher active={isExpanded} thinking={isThinking} onOpen={openLauncher}>
+          <OrbCanvas active={isThinking} />
+        </FloatingLauncher>
+      ) : (
+        <AssistantPanel onClose={closeLauncher}>
+          <AssistantContent>
 
         <section className="presence-section">
           <div className={`orb-field ${executeCommand.isPending || runInference.isPending ? 'is-thinking' : ''}`} data-testid="presence-orb">
@@ -161,7 +167,9 @@ function Home() {
           <span><LockKeyhole size={12} /> private by default</span>
         </footer>
         {showCapabilities && <div className="capability-drawer" data-testid="panel-capabilities">{capabilityQuery.isLoading ? <div className="skeleton-line" /> : capabilityQuery.isError ? <div className="drawer-error"><p>Capabilities are offline.</p><button type="button" onClick={() => capabilityQuery.refetch()} data-testid="button-retry-capabilities"><RefreshCw size={13} /> Retry</button></div> : caps?.capabilities.map((capability) => <div className="capability-row" key={capability.id}><span className="capability-index">{capability.id.slice(0, 2).toUpperCase()}</span><div><b>{capability.label}</b><p>{capability.description}</p></div><ExternalLink size={13} /></div>)}</div>}
-      </div>
+          </AssistantContent>
+        </AssistantPanel>
+      )}
     </main>
   );
 }
@@ -187,14 +195,14 @@ function OrbCanvas({ active }: { active: boolean }) {
           const radius = 37 + ring * 12 + Math.sin(t * (ring + 1) + ring) * (active ? 3 : 1.5);
           context.beginPath();
           context.arc(cx, cy, radius, 0, Math.PI * 2);
-          context.strokeStyle = `hsla(${166 + ring * 18}, 72%, ${70 - ring * 8}%, ${0.32 - ring * 0.06})`;
+          context.strokeStyle = `hsla(${ring === 1 ? 334 : 180}, 100%, ${ring === 1 ? 50 : 62 - ring * 8}%, ${0.32 - ring * 0.06})`;
           context.lineWidth = ring === 0 ? 1.4 : 0.8;
           context.stroke();
         }
         const gradient = context.createRadialGradient(cx - 8, cy - 10, 1, cx, cy, 33);
-        gradient.addColorStop(0, active ? 'rgba(242, 255, 246, .98)' : 'rgba(218, 255, 237, .95)');
-        gradient.addColorStop(.25, 'rgba(117, 231, 196, .88)');
-        gradient.addColorStop(1, 'rgba(25, 130, 125, .06)');
+        gradient.addColorStop(0, active ? 'rgba(244, 239, 255, .98)' : 'rgba(226, 255, 255, .95)');
+        gradient.addColorStop(.25, 'rgba(0, 255, 255, .88)');
+        gradient.addColorStop(1, 'rgba(23, 6, 48, .06)');
         context.fillStyle = gradient;
         context.beginPath();
         context.arc(cx, cy, 29 + Math.sin(t) * (active ? 3 : 1), 0, Math.PI * 2);
@@ -202,7 +210,7 @@ function OrbCanvas({ active }: { active: boolean }) {
         for (let point = 0; point < 18; point += 1) {
           const angle = point * 2.4 + t * (active ? 1.5 : .45);
           const radius = 46 + (point % 3) * 9;
-          context.fillStyle = `hsla(${158 + point * 5}, 70%, 72%, ${point % 2 ? .22 : .48})`;
+          context.fillStyle = `hsla(${point % 3 === 0 ? 334 : 180}, 100%, 70%, ${point % 2 ? .22 : .48})`;
           context.fillRect(cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius, 1.5, 1.5);
         }
         frame += 1;
@@ -220,18 +228,18 @@ function OrbCanvas({ active }: { active: boolean }) {
     scene.add(group);
     const orb = new THREE.Mesh(
       new THREE.IcosahedronGeometry(0.72, 3),
-      new THREE.MeshBasicMaterial({ color: 0x79e7c4, wireframe: true, transparent: true, opacity: 0.82 }),
+      new THREE.MeshBasicMaterial({ color: 0x00ffff, wireframe: true, transparent: true, opacity: 0.82 }),
     );
     group.add(orb);
     const core = new THREE.Mesh(
       new THREE.SphereGeometry(0.47, 24, 24),
-      new THREE.MeshBasicMaterial({ color: 0xd9fff0, transparent: true, opacity: 0.2 }),
+      new THREE.MeshBasicMaterial({ color: 0xf4efff, transparent: true, opacity: 0.2 }),
     );
     group.add(core);
     const rings = [1.08, 1.3, 1.52].map((radius, index) => {
       const ring = new THREE.Mesh(
         new THREE.TorusGeometry(radius, index === 0 ? 0.009 : 0.006, 8, 96),
-        new THREE.MeshBasicMaterial({ color: index === 1 ? 0xf2a184 : 0x52cbbb, transparent: true, opacity: 0.36 - index * 0.07 }),
+        new THREE.MeshBasicMaterial({ color: index === 1 ? 0xff006e : 0x00ffff, transparent: true, opacity: 0.36 - index * 0.07 }),
       );
       ring.rotation.x = index * 0.7;
       ring.rotation.y = index * 0.35;

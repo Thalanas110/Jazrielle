@@ -14,7 +14,7 @@ The browser build can:
 - resolve explicitly allowlisted applications such as Calendar, Downloads, and Spotify;
 - expose a separate open-ended local inference panel.
 
-The browser can display an application result, but browser security prevents it from launching Windows applications directly. Native launching is reserved for a future desktop wrapper, such as Tauri, through the `window.jazrielleDesktop` bridge.
+The browser can display an application result, but browser security prevents it from launching Windows applications directly. The Tauri desktop shell provides the floating always-on-top launcher; application launching remains behind the narrow `window.jazrielleDesktop` bridge.
 
 ## Architecture
 
@@ -107,6 +107,24 @@ npm run dev
 
 Open the frontend at `http://localhost:20380`. The backend is available at `http://127.0.0.1:8000`. Vite proxies `/api` requests to the backend; set `VITE_API_URL` when using a separately hosted backend. The frontend port can be changed with `PORT`.
 
+### Tauri desktop development
+
+The desktop shell requires the Rust stable toolchain and WebView2 on Windows. Start the backend as described above, then run the native shell from `frontend`:
+
+```powershell
+cd frontend
+npm run tauri:dev
+```
+
+The desktop app starts with an 80x80 floating launcher circle. It stays above other windows, expands into a panel capped at 420x640 pixels when clicked, and collapses on close, Escape, or native focus loss. The browser Vite build remains available through `npm run dev`; without Tauri internals it renders the expanded panel in a centered fallback surface.
+
+To build the Tauri application bundle:
+
+```powershell
+cd frontend
+npm run tauri:build
+```
+
 ## Prompt and action configuration
 
 `ai/system-prompt.md` is loaded at backend startup and is authoritative for both command interpretation and the open-ended inference endpoint. The request-level `system` value is retained for API compatibility but does not override the file. Restart the backend after editing the prompt.
@@ -185,7 +203,7 @@ The development UI runs as a normal web page. It cannot call `CreateProcess`, la
 window.jazrielleDesktop.openTarget({ app, url })
 ```
 
-The wrapper, not the model, must map application targets to native operations. Tauri is the planned option for that boundary. Until then, configured project commands and web lookups can be handled by the local backend, while browser-only application launching remains unavailable.
+The wrapper, not the model, must map application targets to native operations. The current Tauri shell owns the floating window boundary, while configured project commands and web lookups continue to run through the local backend. Browser-only application launching remains unavailable until the bridge is implemented by the native shell.
 
 ## Testing and verification
 
@@ -203,6 +221,15 @@ Check the frontend types and production build:
 cd frontend
 npm run typecheck
 npm run build
+```
+
+Run the frontend tests and native Rust check:
+
+```powershell
+cd frontend
+npm run test:run
+cd ..\src-tauri
+cargo check
 ```
 
 ## Troubleshooting
