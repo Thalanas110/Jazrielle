@@ -30,6 +30,11 @@ if (-not $condaPath) {
     throw "Conda was not found. Install or initialize Conda, then create the jazrielle-backend environment."
 }
 
+$pyinstallerCheck = & $condaPath run --no-capture-output -n jazrielle-backend python -c "import PyInstaller" 2>&1
+if ($LASTEXITCODE -ne 0) {
+    throw "PyInstaller is unavailable in the jazrielle-backend Conda environment. Run conda env update -f backend/environment.yml --prune."
+}
+
 New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
 $workDir = Join-Path $rootDir ".build\pyinstaller"
 New-Item -ItemType Directory -Force -Path $workDir | Out-Null
