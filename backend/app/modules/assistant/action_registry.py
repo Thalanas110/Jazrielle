@@ -10,6 +10,8 @@ from app.modules.assistant.action_config import AssistantActionConfig
 from app.modules.assistant.adapters.metrics import LocalMetricsAdapter, MetricsAdapter
 from app.modules.assistant.adapters.media import MediaAdapter, WindowsMediaAdapter
 from app.modules.assistant.adapters.network import (
+    GoogleSearchProvider,
+    SearchProvider,
     UpdateProvider,
     WeatherProvider,
     WttrWeatherProvider,
@@ -100,6 +102,7 @@ def build_action_registry(config: Any = None, adapters: Any = None) -> ActionReg
     )
     weather: WeatherProvider = getattr(adapters, "weather", None) or WttrWeatherProvider()
     updates: UpdateProvider = getattr(adapters, "updates", None) or WingetUpdateProvider()
+    search: SearchProvider = getattr(adapters, "search", None) or GoogleSearchProvider()
     git: GitAdapter = getattr(adapters, "git", None) or LocalGitAdapter()
 
     def cpu_usage(intent: AssistantIntent) -> CommandResult:
@@ -231,6 +234,26 @@ def build_action_registry(config: Any = None, adapters: Any = None) -> ActionReg
         if parsed.scheme.lower() not in {"http", "https"} or not parsed.netloc or parsed.username or parsed.password:
             return CommandResult(message="Only standard web URLs can be opened.", handled=False)
         return CommandResult(message=f"Opening {parsed.netloc}.", handled=True, launchUrl=value.strip())
+
+    def search_google(intent: AssistantIntent) -> CommandResult:
+        value = intent.arguments.get("query")
+        if not isinstance(value, str) or not value.strip():
+            return CommandResult(message="A Google search query is required.", handled=False)
+        query = value.strip()
+        try:
+            results = search.search(query)
+        except (OSError, TimeoutError, ValueError):
+            return CommandResult(message="Google search is temporarily unavailable.", handled=False)
+        if not results:
+            return CommandResult(message=f'No Google results found for "{query}".', handled=True)
+        summaries = []
+        for result in results[:3]:
+            summary = f"{result.title}: {result.snippet}" if result.snippet else result.title
+            summaries.append(f"{summary} ({result.url})")
+        return CommandResult(
+            message=f'Google results for "{query}": ' + "; ".join(summaries),
+            handled=True,
+        )
 
     def git_status(intent: AssistantIntent) -> CommandResult:
         del intent
@@ -376,6 +399,13 @@ def build_action_registry(config: Any = None, adapters: Any = None) -> ActionReg
                 description="Open a validated web URL.",
                 examples=["open https://example.com"],
                 handler=open_url,
+            ),
+            "search_google": ActionDefinition(
+                id="search_google",
+                label="Google search",
+                description="Search Google and return result text without opening a browser.",
+                examples=["search Google for rainfall warnings"],
+                handler=search_google,
             ),
             "git_status": ActionDefinition(
                 id="git_status",

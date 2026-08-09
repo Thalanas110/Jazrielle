@@ -25,6 +25,7 @@ ActionName = Literal[
     "stop_project",
     "git_status",
     "open_url",
+    "search_google",
     "conversation",
 ]
 

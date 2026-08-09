@@ -2,8 +2,9 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from app.modules.assistant.action_config import AssistantActionConfig
+from app.modules.assistant.adapters.network import SearchResult
 from app.modules.assistant.action_registry import build_action_registry
-from tests.support import intent
+from tests.support import FakeSearchProvider, intent
 
 
 class FakeGitAdapter:
@@ -34,6 +35,38 @@ def test_open_url_returns_validated_web_url():
 
     assert result.handled is True
     assert result.launchUrl == "https://example.com/help"
+
+
+def test_search_google_returns_results_without_a_launch_url():
+    search = FakeSearchProvider(
+        [
+            SearchResult(
+                "PAGASA",
+                "https://pagasa.dost.gov.ph/",
+                "Rainfall warning information.",
+            ),
+        ]
+    )
+    result = build_action_registry(
+        AssistantActionConfig(),
+        SimpleNamespace(git=FakeGitAdapter("## main"), search=search),
+    ).execute(intent("search_google", {"query": "color coded rainfall warning for Cebu"}))
+
+    assert result.handled is True
+    assert "PAGASA" in result.message
+    assert result.launchUrl is None
+    assert search.query == "color coded rainfall warning for Cebu"
+
+
+def test_search_google_rejects_an_empty_query_without_searching():
+    search = FakeSearchProvider([])
+    result = build_action_registry(
+        AssistantActionConfig(),
+        SimpleNamespace(git=FakeGitAdapter("## main"), search=search),
+    ).execute(intent("search_google", {"query": "  "}))
+
+    assert result.handled is False
+    assert search.query is None
 
 
 def test_git_status_uses_configured_repository_and_fixed_adapter():
