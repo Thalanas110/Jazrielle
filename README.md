@@ -124,9 +124,9 @@ Open the frontend at `http://localhost:20380`. The backend is available at `http
 }
 ```
 
-The current application targets are Calendar, Downloads, and Spotify. The configured project targets are `tda car rental`, `icarewebsitenew`, `stagedeck`, `jazrielle`, `botchabuster`, `examhub`, and `meatlens-training-2`. Each project uses the fixed VS Code command `cmd.exe /d /s /c "code.cmd ."` and a working directory under `settings.projectRoot`, which is the approved `Desktop\development` tree. Projects outside that root are rejected during startup.
+The current application targets are Calendar, Downloads, and Spotify. Project targets are discovered at backend startup by recursively finding Git repositories under `settings.projectRoot`, which is the approved `Desktop\development` tree. Hidden directories, `.git`, `.worktrees`, and `node_modules` are skipped. Unique repository folder names become identifiers; duplicate names use their normalized relative paths. Add a repository under the root and restart the backend to make it available.
 
-Project support uses named, explicitly configured projects with fixed commands and working directories; it does not accept a raw path or command from the model. For example, “open VS Code on the Jazrielle project” selects `start_project` with `project: "jazrielle"`.
+Every discovered project uses the fixed VS Code command `cmd.exe /d /s /c "code.cmd ."` and `Code.exe` as its process name. Projects outside the root are rejected, and the model cannot supply a raw path, executable, or command.
 
 Restart the backend after editing `assistant-actions.json`, because configuration is loaded during application startup.
 
