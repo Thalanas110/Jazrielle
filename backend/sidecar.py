@@ -1,8 +1,23 @@
 from __future__ import annotations
 
 import argparse
+import os
+import sys
 from collections.abc import Callable, Sequence
 from typing import Any
+
+
+def configure_stdio() -> None:
+    """Give windowed PyInstaller builds safe standard streams for Uvicorn."""
+    if sys.stdin is None:
+        sys.stdin = open(os.devnull, "r", encoding="utf-8")
+    if sys.stdout is None:
+        sys.stdout = open(os.devnull, "w", encoding="utf-8")
+    if sys.stderr is None:
+        sys.stderr = open(os.devnull, "w", encoding="utf-8")
+
+
+configure_stdio()
 
 import uvicorn
 
