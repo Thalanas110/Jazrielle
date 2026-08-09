@@ -109,7 +109,7 @@ Open the frontend at `http://localhost:20380`. The backend is available at `http
 
 ### Tauri desktop development
 
-The desktop shell requires the Rust stable toolchain and WebView2 on Windows. Start the backend as described above, then run the native shell from `frontend`:
+The desktop shell requires the Rust stable toolchain, WebView2, and the `jazrielle-backend` Conda environment with PyInstaller. Place `ai/qwen3-0.6b-q4_k_m.gguf` in the repository before starting the native shell. The Tauri command builds and starts the backend sidecar automatically; no separate backend terminal is needed:
 
 ```powershell
 cd frontend
@@ -118,12 +118,16 @@ npm run tauri:dev
 
 The desktop app starts with an 80x80 floating launcher circle. It stays above other windows, expands into a panel capped at 420x640 pixels when clicked, and collapses on close, Escape, or native focus loss. The browser Vite build remains available through `npm run dev`; without Tauri internals it renders the expanded panel in a centered fallback surface.
 
-To build the Tauri application bundle:
+The first Tauri run may take several minutes while PyInstaller builds the backend executable. The generated sidecar is stored under `src-tauri/binaries/` and is ignored by Git.
+
+To build the single Windows installer containing the Tauri UI, backend sidecar, model, prompt, and action configuration:
 
 ```powershell
 cd frontend
 npm run tauri:build
 ```
+
+NSIS and MSI artifacts are written to `src-tauri/target/release/bundle/`. Because the local model is bundled, the installer is expected to be larger than 500 MB. The generated installer and sidecar are build outputs and are not committed.
 
 ## Prompt and action configuration
 
