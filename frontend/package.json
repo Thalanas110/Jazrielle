@@ -11,8 +11,8 @@
     "test": "vitest",
     "test:run": "vitest run --passWithNoTests",
     "tauri": "tauri",
-    "tauri:dev": "tauri dev --config ../src-tauri/tauri.conf.json",
-    "tauri:build": "tauri build --config ../src-tauri/tauri.conf.json"
+    "tauri:dev": "cd .. && npm --prefix frontend exec -- tauri dev --config src-tauri/tauri.conf.json",
+    "tauri:build": "cd .. && npm --prefix frontend exec -- tauri build --config src-tauri/tauri.conf.json"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.11.1"
