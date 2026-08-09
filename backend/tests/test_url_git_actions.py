@@ -111,6 +111,39 @@ def test_search_google_returns_a_short_relevant_warning_excerpt():
     assert "Unrelated extended forecast details" not in result.message
 
 
+def test_search_google_prioritizes_the_fields_named_in_the_query():
+    url = "https://pagasa.dost.gov.ph/"
+    query = "current rainfall warning for Zambales orange red yellow"
+    search = FakeSearchProvider([SearchResult("PAGASA", url, "Rainfall warning information.")])
+    fetch = FakeFetchProvider(
+        {
+            url: FetchedPage(
+                "PAGASA",
+                url,
+                " ".join(
+                    [
+                        "Regional forecast for Zambales.",
+                        "RED WARNING LEVEL: Zambales.",
+                        "ORANGE WARNING LEVEL: Zambales.",
+                        "YELLOW WARNING LEVEL: Zambales.",
+                        "Extended forecast details for later this week.",
+                    ]
+                ),
+            )
+        }
+    )
+
+    result = build_action_registry(
+        AssistantActionConfig(),
+        SimpleNamespace(git=FakeGitAdapter("## main"), search=search, fetch=fetch),
+    ).execute(intent("search_google", {"query": query}))
+
+    assert "RED WARNING LEVEL" in result.message
+    assert "ORANGE WARNING LEVEL" in result.message
+    assert "YELLOW WARNING LEVEL" in result.message
+    assert "Regional forecast for Zambales" not in result.message
+
+
 def test_git_status_uses_configured_repository_and_fixed_adapter():
     repository = Path("C:/repo").resolve()
     git = FakeGitAdapter("## main")

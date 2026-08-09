@@ -460,9 +460,6 @@ def _configured_target(targets: dict[str, Any], value: Any) -> Any | None:
 
 def _search_excerpt(text: str, query: str) -> str:
     compact_text = " ".join(text.split())
-    if len(compact_text) <= _SEARCH_MAX_EXCERPT_CHARS:
-        return compact_text
-
     query_terms = set(re.findall(r"[a-z0-9]+", query.lower()))
     if not query_terms:
         return compact_text[:_SEARCH_MAX_EXCERPT_CHARS].rstrip()
@@ -481,6 +478,6 @@ def _search_excerpt(text: str, query: str) -> str:
     if not ranked_segments:
         return compact_text[:_SEARCH_MAX_EXCERPT_CHARS].rstrip()
 
-    selected = sorted(ranked_segments, key=lambda item: (-item[0], item[1]))[:4]
+    selected = sorted(ranked_segments, key=lambda item: (-item[0], item[1]))[:3]
     selected.sort(key=lambda item: item[1])
     return " ".join(item[2] for item in selected)[:_SEARCH_MAX_EXCERPT_CHARS].rstrip()
