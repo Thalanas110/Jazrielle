@@ -25,6 +25,15 @@ def test_parse_intent_treats_plain_text_as_safe_conversation():
     assert intent.message == "I'm running normally. What do you need?"
 
 
+def test_parse_intent_removes_classifier_prefix_from_plain_conversation():
+    intent = parse_intent(
+        'conversation "I\'m Jazrielle, a lightweight personal desktop assistant running on Windows."'
+    )
+
+    assert intent.action == "conversation"
+    assert intent.message == "I'm Jazrielle, a lightweight personal desktop assistant running on Windows."
+
+
 @pytest.mark.parametrize(
     "response",
     [

@@ -40,6 +40,24 @@ class IntentParseError(ValueError):
 
 
 _CODE_FENCE_PATTERN = re.compile(r"^```(?:json)?\s*(.*?)\s*```$", re.IGNORECASE | re.DOTALL)
+_PLAIN_CONVERSATION_PATTERN = re.compile(
+    r'''^conversation(?:\s*(?::|-)\s*|\s+)(?P<message>"(?:\\.|[^"\\])*"|'.*?')$''',
+    re.IGNORECASE | re.DOTALL,
+)
+
+
+def _plain_conversation_message(candidate: str) -> str:
+    match = _PLAIN_CONVERSATION_PATTERN.match(candidate)
+    if not match:
+        return candidate
+
+    message = match.group("message")
+    if message[0] == '"':
+        try:
+            return json.loads(message)
+        except json.JSONDecodeError:
+            pass
+    return message[1:-1].strip()
 
 
 def parse_intent(response: str) -> AssistantIntent:
@@ -53,7 +71,11 @@ def parse_intent(response: str) -> AssistantIntent:
         return AssistantIntent.model_validate(payload)
     except json.JSONDecodeError as error:
         if candidate:
-            return AssistantIntent(action="conversation", arguments={}, message=candidate)
+            return AssistantIntent(
+                action="conversation",
+                arguments={},
+                message=_plain_conversation_message(candidate),
+            )
         raise IntentParseError("The model returned an invalid assistant intent.") from error
     except (TypeError, ValidationError) as error:
         raise IntentParseError("The model returned an invalid assistant intent.") from error
