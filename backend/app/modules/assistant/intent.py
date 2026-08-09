@@ -51,5 +51,9 @@ def parse_intent(response: str) -> AssistantIntent:
     try:
         payload = json.loads(candidate)
         return AssistantIntent.model_validate(payload)
-    except (json.JSONDecodeError, TypeError, ValidationError) as error:
+    except json.JSONDecodeError as error:
+        if candidate:
+            return AssistantIntent(action="conversation", arguments={}, message=candidate)
+        raise IntentParseError("The model returned an invalid assistant intent.") from error
+    except (TypeError, ValidationError) as error:
         raise IntentParseError("The model returned an invalid assistant intent.") from error

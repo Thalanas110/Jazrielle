@@ -17,10 +17,18 @@ def test_parse_intent_accepts_a_json_code_fence():
     assert intent.action == "conversation"
 
 
+def test_parse_intent_treats_plain_text_as_safe_conversation():
+    intent = parse_intent("I'm running normally. What do you need?")
+
+    assert intent.action == "conversation"
+    assert intent.arguments == {}
+    assert intent.message == "I'm running normally. What do you need?"
+
+
 @pytest.mark.parametrize(
     "response",
     [
-        "not json",
+        "",
         '{"action":"not_allowed","arguments":{},"message":"x"}',
         '{"action":"get_time","arguments":{},"message":""}',
     ],

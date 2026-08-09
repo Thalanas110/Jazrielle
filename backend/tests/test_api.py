@@ -122,19 +122,19 @@ def test_natural_language_command_is_interpreted_by_model():
     assert response.json()["message"] == "I understand."
 
 
-def test_malformed_model_intent_is_reported_as_a_structured_error():
+def test_plain_text_model_response_becomes_a_safe_conversation():
     application = create_app(model_provider=ConfiguredJsonProvider("not-json"))
     response = TestClient(application).post(
         "/api/jarvis/execute",
         json={"command": "run arbitrary shell"},
     )
 
-    assert response.status_code == 422
+    assert response.status_code == 200
     assert response.json() == {
-        "detail": {
-            "code": "INVALID_MODEL_INTENT",
-            "message": "I couldn't understand that request.",
-        }
+        "message": "not-json",
+        "handled": True,
+        "app": None,
+        "launchUrl": None,
     }
 
 
