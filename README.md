@@ -54,6 +54,7 @@ start-jazrielle.*         launch scripts for PowerShell, CMD, and Bash
 - Python 3.11 through the provided Conda environment.
 - Node.js and npm for the frontend.
 - A local model file at `ai/qwen3-0.6b-q4_k_m.gguf` if model-backed commands and inference are required. GGUF files are intentionally ignored by Git.
+- A TinyFish API key if server-side web search and page fetching are required.
 
 ## Installation
 
@@ -150,7 +151,19 @@ Invoke-RestMethod `
   -Body '{"command":"what time is it"}'
 ```
 
-The command response contains a user-facing `message`, a `handled` flag, and optional `app` or `launchUrl` metadata. Google-search requests use the registered `search_google` action, fetch result titles and snippets in the backend, and return them in `message` without opening a browser or setting `launchUrl`. The frontend passes launch metadata to a desktop bridge only for actions that actually need it.
+The command response contains a user-facing `message`, a `handled` flag, and optional `app` or `launchUrl` metadata. Web-search requests use the registered `search_google` action, call only TinyFish Search and Fetch in the backend, and return fetched page text in `message` without opening a browser or setting `launchUrl`. The frontend passes launch metadata to a desktop bridge only for actions that actually need it.
+
+### TinyFish Search and Fetch setup
+
+Put the key in `backend/.env` and restart the backend:
+
+```text
+TINYFISH_API_KEY=your_tinyfish_api_key
+TINYFISH_LOCATION=PH
+TINYFISH_LANGUAGE=en
+```
+
+The key is read only by the backend and must never be committed. Jazrielle uses TinyFish Search to find HTTPS result URLs, then TinyFish Fetch with `ttl=0` to retrieve current Markdown content. TinyFish Agent and Browser APIs are not used.
 
 Online lookup example:
 
@@ -166,13 +179,13 @@ Online lookup example:
 
 ## Browser and native-desktop boundary
 
-The development UI runs as a normal web page. It cannot call `CreateProcess`, launch `code.exe`, open Spotify directly, or perform other unrestricted desktop actions. The local backend can execute the fixed, allowlisted project command and perform server-side Google lookups; application launch metadata still requires a native wrapper. When one is added, it should expose a narrow bridge such as:
+The development UI runs as a normal web page. It cannot call `CreateProcess`, launch `code.exe`, open Spotify directly, or perform other unrestricted desktop actions. The local backend can execute the fixed, allowlisted project command and perform server-side TinyFish Search/Fetch lookups; application launch metadata still requires a native wrapper. When one is added, it should expose a narrow bridge such as:
 
 ```ts
 window.jazrielleDesktop.openTarget({ app, url })
 ```
 
-The wrapper, not the model, must map application targets to native operations. Tauri is the planned option for that boundary. Until then, configured project commands and Google searches can be handled by the local backend, while browser-only application launching remains unavailable.
+The wrapper, not the model, must map application targets to native operations. Tauri is the planned option for that boundary. Until then, configured project commands and web lookups can be handled by the local backend, while browser-only application launching remains unavailable.
 
 ## Testing and verification
 
@@ -197,6 +210,10 @@ npm run build
 ### The command endpoint returns `422`
 
 The backend returns `422` for an empty or structurally invalid model intent, or for an action that is not registered. Search requests must use the registered `search_google` action; they should not be emitted as `open_url` or an invented action. Plain-text conversational model responses are normalized into safe conversation results. Check that the backend is running the current code and that the local model is responding with the action schema in `ai/system-prompt.md`.
+
+### Web search is not configured
+
+Set `TINYFISH_API_KEY` in `backend/.env`, then restart the backend. Search and Fetch use only the server-side TinyFish APIs; no local browser is required.
 
 ### An application says it is not configured
 

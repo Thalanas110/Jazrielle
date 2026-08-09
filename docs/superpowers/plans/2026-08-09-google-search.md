@@ -1,5 +1,7 @@
 # Google Search Assistant Action Implementation Plan
 
+> **Superseded:** The implementation now uses the TinyFish Search and Fetch APIs exclusively. This file is retained as the historical direct-Google design record; see `2026-08-09-tinyfish-search-fetch.md` for the active plan.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Let Jazrielle interpret Google-search requests, fetch Google results in the backend, and return the useful result text without opening a browser.

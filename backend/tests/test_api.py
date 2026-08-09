@@ -91,6 +91,8 @@ def test_system_prompt_declares_target_and_url_safety_rules():
     assert "accept only an `http` or `https` URL" in prompt
     assert "search_google" in prompt
     assert "do not use `open_url`" in prompt
+    assert "TinyFish Search and Fetch APIs" in prompt
+    assert "TinyFish Agent" in prompt
     assert "Use `start_project` when the user asks to open VS Code in a configured project." in prompt
     assert "configured project-target context" in prompt
     assert "jazrielle" not in prompt
