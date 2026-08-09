@@ -75,6 +75,42 @@ def test_search_google_rejects_an_empty_query_without_searching():
     assert search.query is None
 
 
+def test_search_google_returns_a_short_relevant_warning_excerpt():
+    url = "https://pagasa.dost.gov.ph/"
+    search = FakeSearchProvider(
+        [SearchResult("PAGASA", url, "Rainfall warning information.")]
+    )
+    fetch = FakeFetchProvider(
+        {
+            url: FetchedPage(
+                "PAGASA",
+                url,
+                " ".join(
+                    [
+                        "Regional Forecast Issued At: 05:00 AM.",
+                        "Occasional rains 24 C 28 C.",
+                        "Extended Weather Outlook.",
+                        "Heavy Rainfall Warning No. 34.",
+                        "RED WARNING LEVEL: Metro Manila, Bataan, Zambales, Pampanga.",
+                        "ASSOCIATED HAZARD: FLOODING.",
+                        "Unrelated extended forecast details " * 40,
+                    ]
+                ),
+            )
+        }
+    )
+
+    result = build_action_registry(
+        AssistantActionConfig(),
+        SimpleNamespace(git=FakeGitAdapter("## main"), search=search, fetch=fetch),
+    ).execute(intent("search_google", {"query": "current rainfall warning for Zambales"}))
+
+    assert len(result.message) <= 1000
+    assert "RED WARNING LEVEL" in result.message
+    assert "Zambales" in result.message
+    assert "Unrelated extended forecast details" not in result.message
+
+
 def test_git_status_uses_configured_repository_and_fixed_adapter():
     repository = Path("C:/repo").resolve()
     git = FakeGitAdapter("## main")

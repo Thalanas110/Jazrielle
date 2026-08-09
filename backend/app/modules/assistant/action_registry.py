@@ -1,5 +1,6 @@
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
+import re
 import subprocess
 from typing import Any
 from urllib.parse import urlparse
@@ -27,6 +28,10 @@ from app.modules.assistant.adapters.system import LocalSystemAdapter, SystemAdap
 
 
 ActionHandler = Callable[[AssistantIntent], CommandResult | Mapping[str, Any]]
+
+_SEARCH_MAX_RESULTS = 2
+_SEARCH_MAX_EXCERPT_CHARS = 650
+_SEARCH_MAX_MESSAGE_CHARS = 1000
 
 
 @dataclass(frozen=True)
@@ -267,18 +272,19 @@ def build_action_registry(
         if not results:
             return CommandResult(message=f'No web results found for "{query}".', handled=True)
         try:
-            fetched_pages = fetch.fetch([result.url for result in results[:3]], query)
+            fetched_pages = fetch.fetch([result.url for result in results[:_SEARCH_MAX_RESULTS]], query)
         except (OSError, SearchNotConfiguredError, TimeoutError, ValueError):
             fetched_pages = {}
         summaries = []
-        for result in results[:3]:
+        for result in results[:_SEARCH_MAX_RESULTS]:
             page = fetched_pages.get(result.url)
             content = page.text if page is not None else result.snippet
-            compact_content = " ".join(content.split())[:1200].rstrip()
+            compact_content = _search_excerpt(content, query)
             summary = f"{result.title}: {compact_content}" if compact_content else result.title
             summaries.append(f"{summary} ({result.url})")
+        message = f'Web results for "{query}": ' + "; ".join(summaries)
         return CommandResult(
-            message=f'Web results for "{query}": ' + "; ".join(summaries),
+            message=message[:_SEARCH_MAX_MESSAGE_CHARS].rstrip(),
             handled=True,
         )
 
@@ -450,3 +456,31 @@ def _configured_target(targets: dict[str, Any], value: Any) -> Any | None:
     if not isinstance(value, str) or not value.strip():
         return None
     return targets.get(value.strip().lower())
+
+
+def _search_excerpt(text: str, query: str) -> str:
+    compact_text = " ".join(text.split())
+    if len(compact_text) <= _SEARCH_MAX_EXCERPT_CHARS:
+        return compact_text
+
+    query_terms = set(re.findall(r"[a-z0-9]+", query.lower()))
+    if not query_terms:
+        return compact_text[:_SEARCH_MAX_EXCERPT_CHARS].rstrip()
+
+    segments = [
+        segment.strip()
+        for segment in re.split(r"(?<=[.!?])\s+|\s{2,}", compact_text)
+        if segment.strip()
+    ]
+    ranked_segments = []
+    for index, segment in enumerate(segments):
+        segment_terms = re.findall(r"[a-z0-9]+", segment.lower())
+        score = sum(segment_terms.count(term) for term in query_terms)
+        if score:
+            ranked_segments.append((score, index, segment))
+    if not ranked_segments:
+        return compact_text[:_SEARCH_MAX_EXCERPT_CHARS].rstrip()
+
+    selected = sorted(ranked_segments, key=lambda item: (-item[0], item[1]))[:4]
+    selected.sort(key=lambda item: item[1])
+    return " ".join(item[2] for item in selected)[:_SEARCH_MAX_EXCERPT_CHARS].rstrip()

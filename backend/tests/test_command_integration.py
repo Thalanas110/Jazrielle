@@ -2,7 +2,7 @@ from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
 
-from app.core.config import DEFAULT_SYSTEM_PROMPT_PATH
+from app.core.config import DEFAULT_SYSTEM_PROMPT_PATH, Settings
 from app.modules.assistant.adapters.network import FetchedPage, SearchResult
 from app.main import create_app
 from app.modules.assistant.model import ModelStatus
@@ -93,7 +93,10 @@ def test_google_search_without_tinyfish_key_reports_configuration():
     provider = ConfiguredJsonProvider(
         '{"action":"search_google","arguments":{"query":"rainfall warning"},"message":"Searching."}'
     )
-    application = create_app(model_provider=provider)
+    application = create_app(
+        settings=Settings(tinyfish_api_key=None),
+        model_provider=provider,
+    )
 
     response = TestClient(application).post(
         "/api/jarvis/execute",
