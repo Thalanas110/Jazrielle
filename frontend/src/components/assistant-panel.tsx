@@ -10,6 +10,7 @@ export function AssistantPanel({ onClose, children }: AssistantPanelProps) {
   return (
     <section
       className="assistant-panel"
+      id="assistant-panel"
       role="dialog"
       aria-modal="false"
       aria-labelledby="assistant-panel-title"

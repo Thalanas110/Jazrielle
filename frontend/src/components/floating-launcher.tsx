@@ -13,6 +13,9 @@ export function FloatingLauncher({ active, thinking, onOpen, children }: Floatin
       type="button"
       className={`launcher-button${active ? ' is-active' : ''}`}
       aria-label="Open Jazrielle"
+      aria-controls="assistant-panel"
+      aria-expanded="false"
+      aria-haspopup="dialog"
       data-testid="button-open-launcher"
       data-state={thinking ? 'thinking' : 'ready'}
       onClick={onOpen}
