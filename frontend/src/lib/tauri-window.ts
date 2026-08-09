@@ -36,3 +36,20 @@ export async function syncNativeWindow(mode: WindowMode): Promise<boolean> {
   if (mode === 'expanded') await nativeWindow.setFocus();
   return true;
 }
+
+export async function initializeNativeWindow(): Promise<boolean> {
+  if (!isTauriRuntime()) return false;
+
+  const nativeWindow = getCurrentWindow();
+  await nativeWindow.setAlwaysOnTop(true);
+  await nativeWindow.setSkipTaskbar(true);
+  await syncNativeWindow('collapsed');
+  await nativeWindow.show();
+  return true;
+}
+
+export async function listenForNativeFocus(onFocusChange: (focused: boolean) => void): Promise<() => void> {
+  if (!isTauriRuntime()) return () => undefined;
+
+  return getCurrentWindow().onFocusChanged(({ payload }) => onFocusChange(payload));
+}
