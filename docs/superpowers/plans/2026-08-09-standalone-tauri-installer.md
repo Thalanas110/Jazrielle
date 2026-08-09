@@ -199,6 +199,8 @@ Required behavior:
 - [ ] Close the app and verify Get-Process jazrielle-backend returns no process.
 - [ ] Commit only source changes if lifecycle verification requires a fix.
 
+Native lifecycle smoke test was not run because port 8000 was already owned by an existing Anaconda Python backend process; it was left untouched.
+
 ### Task 14: Build the single installer
 
 - [x] Run frontend: npm run tauri:build; rerun after final sidecar changes before merge.
@@ -217,10 +219,10 @@ Required behavior:
 Files:
 - Modify README.md if final commands or paths differ.
 
-- [x] Run frontend: npm run test:run and npm run build; run npm run typecheck before merge.
+- [x] Run frontend: npm run test:run, npm run typecheck, and npm run build.
 - [x] Run src-tauri: cargo test and cargo check.
 - [x] Run scripts/test-backend-sidecar.ps1.
 - [ ] Restore tracked frontend/dist/public if the build rewrites it.
 - [x] Run git diff --check, git status --short, and git log --oneline --decorate -20.
 - [x] Confirm no generated executable or installer is committed; generated frontend/dist changes remain local build output.
-- [ ] Commit final documentation: docs: document standalone installer release.
+- [x] Commit final documentation: docs: document standalone installer release.
