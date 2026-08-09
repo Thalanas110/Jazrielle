@@ -151,7 +151,7 @@ Invoke-RestMethod `
   -Body '{"command":"what time is it"}'
 ```
 
-The command response contains a user-facing `message`, a `handled` flag, and optional `app` or `launchUrl` metadata. Web-search requests use the registered `search_google` action, call only TinyFish Search and Fetch in the backend, and return fetched page text in `message` without opening a browser or setting `launchUrl`. The frontend passes launch metadata to a desktop bridge only for actions that actually need it.
+The command response contains a user-facing `message`, a `handled` flag, and optional `app` or `launchUrl` metadata. Web-search requests use the registered `search_google` action, call only TinyFish Search and Fetch in the backend, then send the returned source material through a second local Qwen pass that answers the user’s question concisely. The final `message` is the answer itself, not a raw result listing, and no browser is opened or `launchUrl` set. If that answer pass is unavailable, the backend returns a bounded source excerpt as a safe fallback.
 
 ### TinyFish Search and Fetch setup
 
