@@ -11,5 +11,17 @@ class FakeSearchProvider:
         return self.results
 
 
+class FakeFetchProvider:
+    def __init__(self, pages):
+        self.pages = pages
+        self.urls = None
+        self.purpose = None
+
+    def fetch(self, urls: list[str], purpose: str):
+        self.urls = urls
+        self.purpose = purpose
+        return self.pages
+
+
 def intent(action: str, arguments: dict | None = None, message: str = "Checking.") -> AssistantIntent:
     return AssistantIntent(action=action, arguments=arguments or {}, message=message)

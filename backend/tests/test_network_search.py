@@ -1,5 +1,16 @@
+import json
+from urllib.parse import parse_qs, urlparse
+
+import pytest
+
 from app.modules.assistant.adapters import network
-from app.modules.assistant.adapters.network import GoogleSearchProvider, SearchResult
+from app.modules.assistant.adapters.network import (
+    FetchedPage,
+    SearchNotConfiguredError,
+    SearchResult,
+    TinyFishFetchProvider,
+    TinyFishSearchProvider,
+)
 
 
 class FakeResponse:
@@ -16,23 +27,21 @@ class FakeResponse:
         return self.content
 
 
-def test_google_search_parses_safe_result_titles_snippets_and_links(monkeypatch):
-    html = b"""
-    <a href="/url?q=https%3A%2F%2Fpagasa.dost.gov.ph%2F&amp;sa=U"><h3>PAGASA</h3></a>
-    <div class="VwiC3b">Rainfall warning information.</div>
-    <a href="javascript:alert(1)"><h3>Unsafe result</h3></a>
-    <div class="VwiC3b">Ignore this result.</div>
-    """
+def test_tinyfish_search_returns_structured_results(monkeypatch):
     captured = {}
 
     def fake_urlopen(request, timeout):
-        captured["url"] = request.full_url
+        captured["request"] = request
         captured["timeout"] = timeout
-        return FakeResponse(html)
+        return FakeResponse(
+            b'{"results":[{"title":"PAGASA","url":"https://pagasa.dost.gov.ph/","snippet":"Rainfall warning information."}]}'
+        )
 
     monkeypatch.setattr(network, "urlopen", fake_urlopen)
 
-    results = GoogleSearchProvider().search("color coded rainfall warning")
+    results = TinyFishSearchProvider("secret", location="PH", language="en").search(
+        "color coded rainfall warning"
+    )
 
     assert results == [
         SearchResult(
@@ -41,6 +50,60 @@ def test_google_search_parses_safe_result_titles_snippets_and_links(monkeypatch)
             "Rainfall warning information.",
         )
     ]
-    assert captured["url"].startswith("https://www.google.com/search?")
-    assert "q=color+coded+rainfall+warning" in captured["url"]
-    assert captured["timeout"] == 5
+    request = captured["request"]
+    query = parse_qs(urlparse(request.full_url).query)
+    assert request.full_url.startswith("https://api.search.tinyfish.ai?")
+    assert query["query"] == ["color coded rainfall warning"]
+    assert query["location"] == ["PH"]
+    assert query["language"] == ["en"]
+    assert request.get_header("X-api-key") == "secret"
+    assert captured["timeout"] == 15
+
+
+def test_tinyfish_fetch_returns_page_content_and_requests_fresh_markdown(monkeypatch):
+    captured = {}
+    url = "https://pagasa.dost.gov.ph/"
+
+    def fake_urlopen(request, timeout):
+        captured["request"] = request
+        captured["timeout"] = timeout
+        return FakeResponse(
+            json.dumps(
+                {
+                    "results": [
+                        {
+                            "url": url,
+                            "final_url": url,
+                            "title": "PAGASA",
+                            "text": "Current rainfall warning information.",
+                        }
+                    ],
+                    "errors": [],
+                }
+            ).encode()
+        )
+
+    monkeypatch.setattr(network, "urlopen", fake_urlopen)
+
+    pages = TinyFishFetchProvider("secret").fetch([url], "Check the current rainfall warning.")
+
+    assert pages == {
+        url: FetchedPage("PAGASA", url, "Current rainfall warning information.")
+    }
+    request = captured["request"]
+    payload = json.loads(request.data)
+    assert request.full_url == "https://api.fetch.tinyfish.ai"
+    assert request.get_method() == "POST"
+    assert request.get_header("X-api-key") == "secret"
+    assert payload == {
+        "urls": [url],
+        "format": "markdown",
+        "ttl": 0,
+        "purpose": "Check the current rainfall warning.",
+    }
+    assert captured["timeout"] == 45
+
+
+def test_tinyfish_search_requires_an_api_key():
+    with pytest.raises(SearchNotConfiguredError):
+        TinyFishSearchProvider(None).search("rainfall warning")
