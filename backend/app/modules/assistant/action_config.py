@@ -3,6 +3,12 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
+from app.modules.assistant.project_discovery import discover_project_directories
+
+
+_PROJECT_START_COMMAND = ["cmd.exe", "/d", "/s", "/c", "code.cmd ."]
+_PROJECT_PROCESS_NAME = "Code.exe"
+
 
 class ConfigError(ValueError):
     """Raised when the configured assistant targets are invalid."""
@@ -55,6 +61,15 @@ def load_action_config(path: Path) -> AssistantActionConfig:
 
     base_dir = path.resolve().parent
     config.settings.project_root = _resolve_existing_directory(config.settings.project_root, base_dir)
+    if not config.projects:
+        config.projects = {
+            identifier: ProjectTarget(
+                workingDirectory=project_path,
+                startCommand=_PROJECT_START_COMMAND.copy(),
+                processName=_PROJECT_PROCESS_NAME,
+            )
+            for identifier, project_path in discover_project_directories(config.settings.project_root).items()
+        }
     for project_name, project in config.projects.items():
         project.working_directory = _resolve_existing_directory(project.working_directory, base_dir)
         if not project.working_directory.is_relative_to(config.settings.project_root):

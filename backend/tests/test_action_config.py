@@ -77,6 +77,30 @@ def test_load_action_config_rejects_project_outside_allowlisted_root(tmp_path):
         load_action_config(config_path)
 
 
+def test_load_action_config_discovers_projects_when_project_map_is_empty(tmp_path):
+    root = tmp_path / "development"
+    repository = root / "personal" / "demo"
+    (repository / ".git").mkdir(parents=True)
+    config_path = tmp_path / "assistant-actions.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "projects": {},
+                "settings": {"projectRoot": str(root)},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    config = load_action_config(config_path)
+
+    assert config.projects["demo"].working_directory == repository.resolve()
+    assert config.projects["demo"].start_command == [
+        "cmd.exe", "/d", "/s", "/c", "code.cmd ."
+    ]
+    assert config.projects["demo"].process_name == "Code.exe"
+
+
 def test_default_projects_are_vscode_targets_inside_development_root():
     config = load_action_config(DEFAULT_ACTION_CONFIG_PATH)
 
