@@ -1,6 +1,9 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { isTauriRuntime } from './tauri-window';
 
-const API_BASE = import.meta.env.VITE_API_URL ?? '/api';
+export function getApiBaseUrl(): string {
+  return import.meta.env.VITE_API_URL ?? (isTauriRuntime() ? 'http://127.0.0.1:8000/api' : '/api');
+}
 
 async function commandError(response: Response): Promise<Error> {
   try {
@@ -54,7 +57,7 @@ export function useGetJarvisCapabilities({
   return useQuery({
     queryKey: query.queryKey,
     queryFn: async () => {
-      const response = await fetch(`${API_BASE}/jarvis/capabilities`);
+      const response = await fetch(`${getApiBaseUrl()}/jarvis/capabilities`);
       if (!response.ok) {
         throw new Error(`Capabilities request failed: ${response.status}`);
       }
@@ -70,7 +73,7 @@ export function useExecuteJarvisCommand() {
     }: {
       data: { command: string };
     }): Promise<CommandResult> => {
-      const response = await fetch(`${API_BASE}/jarvis/execute`, {
+      const response = await fetch(`${getApiBaseUrl()}/jarvis/execute`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -90,7 +93,7 @@ export function useRunJarvisInference() {
     }: {
       data: { prompt: string; system: string };
     }): Promise<InferenceResult> => {
-      const response = await fetch(`${API_BASE}/jarvis/inference`, {
+      const response = await fetch(`${getApiBaseUrl()}/jarvis/inference`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
