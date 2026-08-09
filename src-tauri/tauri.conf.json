@@ -32,6 +32,13 @@
     ]
   },
   "bundle": {
-    "active": false
+    "active": true,
+    "targets": ["nsis", "msi"],
+    "externalBin": ["binaries/jazrielle-backend"],
+    "resources": {
+      "../ai/qwen3-0.6b-q4_k_m.gguf": "ai/qwen3-0.6b-q4_k_m.gguf",
+      "../ai/system-prompt.md": "ai/system-prompt.md",
+      "../ai/assistant-actions.json": "ai/assistant-actions.json"
+    }
   }
 }
